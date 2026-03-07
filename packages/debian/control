@@ -1,0 +1,64 @@
+Source: hp-scanner-driver
+Section: text
+Priority: optional
+Maintainer: c0xc <c0xc@example.com>
+Build-Depends: debhelper (>= 12),
+               dh-python,
+               python3-all,
+               python3-setuptools,
+               build-essential,
+               autoconf,
+               automake,
+               libtool,
+               pkg-config,
+               libcups2-dev,
+               libcupsimage2-dev,
+               libusb-1.0-0-dev,
+               libsane-dev,
+               libjpeg-dev,
+               libdbus-1-dev,
+               libavahi-client-dev,
+               libavahi-common-dev,
+               libavahi-core-dev,
+               libsnmp-dev,
+               python3-dev,
+               python3-pyqt5,
+               python3-sip
+Standards-Version: 4.6.0
+Homepage: https://github.com/c0xc/hplip-packages
+Vcs-Git: https://github.com/c0xc/hplip-packages.git
+Vcs-Browser: https://github.com/c0xc/hplip-packages
+Rules-Requires-Root: no
+
+Package: hp-scanner-driver
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${python3:Depends},
+         ${misc:Depends},
+         cups-client,
+         cups-daemon,
+         sane-utils,
+         python3-pyqt5,
+         python3 (>= 3.8)
+Recommends: system-config-printer,
+            simple-scan
+Conflicts: hplip, hplip-data, python2
+Provides: hplip-driver
+Description: HP scanner and printer drivers for modern Linux systems
+   HPLIP is an integrated solution for HP inkjet and laser printers,
+   all-in-one devices, and scanners.
+   .
+   This package provides pre-built HP drivers with fixes for modern
+   Linux distributions. Unlike the official HP installer, this package
+   installs cleanly via apt and can be removed cleanly.
+   .
+   Features:
+    - Printer drivers for HP inkjet and laser printers
+    - Scanner drivers for HP all-in-one devices
+    - HP Toolbox GUI for device management
+    - hp-setup wizard for easy printer setup
+    - hp-check diagnostics tool
+   .
+   This package is maintained independently and is not affiliated with
+   or endorsed by HP Development Company, L.P. HPLIP is a trademark
+   of HP Development Company, L.P.

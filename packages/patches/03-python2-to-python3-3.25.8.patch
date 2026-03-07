@@ -1,0 +1,53 @@
+# Python 2 to Python 3 Migration Patch
+# Maintainer: c0xc
+# This patch fixes python2 shebangs and configure script to use python3
+
+--- a/configure.in
++++ b/configure.in
+@@ -1,7 +1,7 @@
+ dnl Process this file with autoconf to produce a configure script.
+ AC_INIT([hplip], [3.25.8], [dbinary@hp.com], [hplip], [http://www.hp.com/go/linux])
+ 
+-dnl Check for python2
+-AC_CHECK_PROG(PYTHON, python2, python2)
+-if test -z "$PYTHON"; then
+-    AC_CHECK_PROG(PYTHON, python, python)
+-fi
++dnl Check for python3 (prefer python3 over python2)
++AC_CHECK_PROG(PYTHON, python3, python3)
++if test -z "$PYTHON"; then
++    AC_CHECK_PROG(PYTHON, python, python)
++fi
+ if test -z "$PYTHON"; then
+     AC_MSG_ERROR([Cannot find python. Please install python and try again.])
+ fi
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -1,5 +1,5 @@
+ # Makefile for HPLIP
+-PYTHON = /usr/bin/python2
++PYTHON = /usr/bin/python3
+ 
+ # Rest of Makefile.in...
+
+--- a/hp-setup.in
++++ b/hp-setup.in
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2
++#!/usr/bin/python3
+ # hp-setup - Setup wizard for HP printers and all-in-ones
+ 
+--- a/hp-scan.in
++++ b/hp-scan.in
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2
++#!/usr/bin/python3
+ # hp-scan - Scan utility for HP all-in-ones
+ 
+--- a/hp-check.in
++++ b/hp-check.in
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python2
++#!/usr/bin/python3
+ # hp-check - Diagnostic utility for HPLIP

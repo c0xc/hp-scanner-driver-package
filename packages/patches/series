@@ -1,0 +1,8 @@
+# Qt4 to Qt5 migration - version specific (only matching version will be applied)
+01-qt4-to-qt5-3.25.2.patch
+01-qt4-to-qt5-3.25.6.patch
+01-qt4-to-qt5-3.25.8.patch
+# Common patches for all versions (no version suffix = all versions)
+# 02-fix-destdir.patch  # DISABLED - needs regeneration per version
+# Python 2 to Python 3 migration - version specific
+03-python2-to-python3-3.25.8.patch

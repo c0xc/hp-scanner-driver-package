@@ -1,0 +1,25 @@
+# Containerfile for building hp-scanner-driver (Ubuntu 20.04 / Mint 20.x)
+# Maintainer: c0xc
+# Build: podman build -t hp-scanner-driver-ubuntu-20.04-builder -f Containerfile.ubuntu-20.04 .
+# Run:   podman run --rm -v ./output:/build/output hp-scanner-driver-ubuntu-20.04-builder [VERSION|latest]
+#
+# Target: Ubuntu 20.04 LTS (Focal) and Linux Mint 20.x
+
+FROM ubuntu:focal
+
+RUN apt-get update && apt-get install -y \
+    build-essential autoconf automake libtool pkg-config \
+    libcups2-dev libcupsimage2-dev libusb-1.0-0-dev \
+    libsane-dev libjpeg-dev libdbus-1-dev \
+    libavahi-client-dev libavahi-common-dev libavahi-core-dev \
+    libsnmp-dev python3-dev python3-pyqt5 python3-sip \
+    devscripts equivs wget patch \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+COPY packages/ /build/packages/
+COPY VERSION /build/VERSION
+
+RUN printf '#!/bin/bash\nVERSION=${1:-latest}\nif [ "$VERSION" = "latest" ]; then\n    VERSION=$(cat /build/VERSION)\nfi\ncd /build/packages\n./build-deb.sh $VERSION ubuntu-20.04\n' > /build/build.sh && chmod +x /build/build.sh
+
+ENTRYPOINT ["/build/build.sh"]

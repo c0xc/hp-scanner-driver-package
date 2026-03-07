@@ -1,0 +1,30 @@
+#!/bin/bash
+# postinst - Configure hp-scanner-driver after installation
+# Maintainer: c0xc
+#
+# BUG FIX: Use drop-in config instead of modifying shared dll.conf
+# - Creates /etc/sane.d/dll.d/hpaio.conf (our own file, no conflict)
+# - Does NOT modify /etc/sane.d/dll.conf (owned by libsane-common)
+
+set -e
+
+case "$1" in
+    configure)
+        # Create dll.d directory if it doesn't exist (modern sane uses drop-in configs)
+        mkdir -p /etc/sane.d/dll.d
+
+        # Create hpaio drop-in config (doesn't conflict with libsane-common)
+        # This file tells SANE to load the hpaio backend for HP devices
+        echo "hpaio" > /etc/sane.d/dll.d/hpaio.conf
+
+        # Update library cache
+        ldconfig
+
+        # Restart cups if running
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl restart cups 2>/dev/null || true
+        fi
+        ;;
+esac
+
+exit 0

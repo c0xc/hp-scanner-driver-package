@@ -1,0 +1,28 @@
+# DESTDIR Installation Fix Patch
+# Maintainer: c0xc
+# This patch fixes DESTDIR handling for proper package building
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -9930,6 +9930,7 @@ distuninstallcheck_listfiles = find . -type f -print
+ distuninstallcheck:
+ 	@cd $(distuninstallcheck_dir) \
+ 	&& test `$(distuninstallcheck_listfiles) | wc -l` -le 1 \
++	   || { echo "ERROR: files left after uninstall" ; \
+ 	   || { echo "ERROR: distuninstallcheck found files left in '\$(distuninstallcheck_dir)'" ; \
+ 	        exit 1; } ; \
+ 
+@@ -9948,11 +9949,11 @@ distuninstallcheck:
+ 	@echo "  DC: dc_install"
+ 	@dc_destdir="$(DESTDIR)" ; \
+ 	   test -n "$$dc_destdir" || dc_destdir="/" ; \
+-	   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" install \
++	   $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$(DESTDIR)" install \
+ 	   && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" uninstall \
+ 	   && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
+ 	      distuninstallcheck_listfiles > /dev/null \
+-	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$dc_destdir" \
++	       && $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$(DESTDIR)" \
+ 	          distuninstallcheck_listfiles > /dev/null \
+ 	       || { echo "ERROR: distuninstallcheck found files left" ; \
+ 	            exit 1; } ; \

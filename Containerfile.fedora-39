@@ -1,0 +1,21 @@
+# Containerfile for building hp-scanner-driver (Fedora 39)
+# Maintainer: c0xc
+# Build: podman build -t hp-scanner-driver-fedora-39-builder -f Containerfile.fedora-39 .
+# Run:   podman run --rm -v ./output:/build/output hp-scanner-driver-fedora-39-builder [VERSION|latest]
+
+FROM fedora:39
+
+RUN dnf install -y \
+    gcc gcc-c++ make autoconf automake libtool pkg-config \
+    cups-devel libusb1-devel sane-backends-devel libjpeg-devel \
+    dbus-devel avahi-devel net-snmp-devel python3-devel python3-qt5 \
+    rpm-build rpmdevtools wget patch \
+    && dnf clean all
+
+WORKDIR /build
+COPY packages/ /build/packages/
+COPY VERSION /build/VERSION
+
+RUN printf '#!/bin/bash\nVERSION=${1:-latest}\nif [ "$VERSION" = "latest" ]; then\n    VERSION=$(cat /build/VERSION)\nfi\ncd /build/packages\n./build-rpm.sh $VERSION fedora-39\n' > /build/build.sh && chmod +x /build/build.sh
+
+ENTRYPOINT ["/build/build.sh"]

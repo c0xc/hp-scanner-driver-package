@@ -1,0 +1,16 @@
+#!/bin/bash
+# prerm - Remove hp-scanner-driver configuration before removal
+# Maintainer: c0xc
+#
+# BUG FIX: Remove our drop-in config (not the shared dll.conf)
+
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        # Remove hpaio drop-in config
+        rm -f /etc/sane.d/dll.d/hpaio.conf
+        ;;
+esac
+
+exit 0

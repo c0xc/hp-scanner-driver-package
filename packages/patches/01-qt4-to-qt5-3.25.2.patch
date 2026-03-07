@@ -1,0 +1,440 @@
+# Qt4 to Qt5 Migration Patch
+# Maintainer: c0xc
+# Migrates HPLIP from obsolete Qt4 to Qt5
+
+--- a/base/utils.py
++++ b/base/utils.py
+@@ -2478,17 +2478,11 @@ def checkPyQtImport45():
+     try:
+         import PyQt5
+         return "PyQt5"
+     except ImportError as e:
+         log.debug(e)
+ 
+-    try:
+-        import PyQt4
+-        return "PyQt4"
+-    except ImportError as e:
+-        log.debug(e)
+-
+-    raise ImportError("GUI Modules PyQt4 and PyQt5 are not installed")
++    raise ImportError("GUI Module PyQt5 is not installed")
+ 
+ 
+ def ui_status():
+@@ -2502,11 +2496,11 @@ def ui_status():
+ 
+ def import_dialog(ui_toolkit):
+     if ui_toolkit == "qt4":
+         try:
+-            from PyQt4.QtGui import QApplication
+-            log.debug("Using PyQt4")
+-            return  (QApplication, "ui4")
++            from PyQt5.QtWidgets import QApplication
++            log.debug("Using PyQt5")
++            return  (QApplication, "ui5")
+         except ImportError as e:
+             log.error(e)
+             sys.exit(1)
+
+--- a/colorcal.py
++++ b/colorcal.py
+@@ -231,9 +231,9 @@ def main():
+ 
+     else:
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.colorcaldialog import ColorCalDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.colorcaldialog import ColorCalDialog
+         except ImportError:
+-            log.error("Unable to load Qt4 support. Is it installed?")
++            log.error("Unable to load Qt5 support. Is it installed?")
+             sys.exit(1)
+ 
+         #try:
+
+--- a/linefeedcal.py
++++ b/linefeedcal.py
+@@ -61,8 +61,8 @@ def main():
+         sys.exit(1)
+ 
+     try:
+-        from PyQt4.QtGui import QApplication
+-        from ui4.linefeedcaldialog import LineFeedCalDialog
++        from PyQt5.QtWidgets import QApplication
++        from ui5.linefeedcaldialog import LineFeedCalDialog
+     except ImportError:
+         log.error("Unable to load Qt support. Is it installed?")
+         sys.exit(1)
+
+--- a/check-plugin.py
++++ b/check-plugin.py
+@@ -70,8 +70,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication, QMessageBox
+-            from ui4.plugindiagnose import PluginDiagnose
++            from PyQt5.QtWidgets import QApplication, QMessageBox
++            from ui5.plugindiagnose import PluginDiagnose
+             from installer import core_install
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+
+--- a/plugin.py
++++ b/plugin.py
+@@ -256,8 +256,8 @@ def main():
+             sys.exit(1)
+ 
+             try:
+-                from PyQt4.QtGui import QMessageBox
+-                from ui4.pluginform import PluginForm
++                from PyQt5.QtWidgets import QMessageBox
++                from ui5.pluginform import PluginForm
+             except ImportError:
+                 log.error("Unable to load Qt support. Is it installed?")
+                 sys.exit(1)
+
+--- a/makecopies.py
++++ b/makecopies.py
+@@ -232,8 +232,8 @@ def main():
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.makecopiesform import MakeCopiesForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.makecopiesform import MakeCopiesForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/upgrade.py
++++ b/upgrade.py
+@@ -346,8 +346,8 @@ def main():
+                     sys.exit(1)
+ 
+                     try:
+-                        from PyQt4.QtGui import QApplication, QMessageBox
+-                        from ui4.upgradeform import UpgradeForm
++                        from PyQt5.QtWidgets import QApplication, QMessageBox
++                        from ui5.upgradeform import UpgradeForm
+                     except ImportError:
+                         log.error("Unable to load Qt support. Is it installed?")
+                         sys.exit(1)
+
+--- a/pqdiag.py
++++ b/pqdiag.py
+@@ -60,8 +60,8 @@ def main():
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.pqdiagform import PqDiagForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.pqdiagform import PqDiagForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/faxsetup.py
++++ b/faxsetup.py
+@@ -67,8 +67,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.faxsetup import FaxSetupDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.faxsetup import FaxSetupDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/print.py
++++ b/print.py
+@@ -134,8 +134,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.printdialog import PrintDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.printdialog import PrintDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/printsettings.py
++++ b/printsettings.py
+@@ -79,8 +79,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.printsettingsdialog import PrintSettingsDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.printsettingsdialog import PrintSettingsDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/setup.py
++++ b/setup.py
+@@ -293,8 +293,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication, QMessageBox
+-            from ui4.setupdialog import SetupDialog
++            from PyQt5.QtWidgets import QApplication, QMessageBox
++            from ui5.setupdialog import SetupDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/systray.py
++++ b/systray.py
+@@ -52,7 +52,7 @@ def main():
+         sys.exit(0)
+ 
+     try:
+-        from PyQt4.QtGui import QApplication
++        from PyQt5.QtWidgets import QApplication
+         from base.module import loadModule
+         app = QApplication(sys.argv)
+         mod = loadModule('statusprinter',
+
+--- a/toolbox.py
++++ b/toolbox.py
+@@ -249,8 +249,8 @@ def main():
+     # if utils.ui_status[1] == "PyQt4":
+     #     try:
+     #         from PyQt4.QtGui import QApplication
+-    from PyQt4.QtGui import QApplication
+-    from ui4.toolbox import ToolBox
++    from PyQt5.QtWidgets import QApplication
++    from ui5.toolbox import ToolBox
+ 
+     app = QApplication(sys.argv)
+     form = ToolBox(None, device_uri, scan_device_uri, False, True)
+
+--- a/wificonfig.py
++++ b/wificonfig.py
+@@ -65,8 +65,8 @@ def main():
+     #     try:
+     #         from PyQt4.QtGui import QApplication
+     #         from ui4.wificonfig import WifiConfig
+-    from PyQt4.QtGui import QApplication
+-    from ui4.wificonfig import WifiConfig
++    from PyQt5.QtWidgets import QApplication
++    from ui5.wificonfig import WifiConfig
+ 
+     app = QApplication(sys.argv)
+     form = WifiConfig(None, device_uri, False, True)
+
+--- a/firmware.py
++++ b/firmware.py
+@@ -112,8 +112,8 @@ def main():
+     #     try:
+     #         from PyQt4.QtGui import QApplication
+     #         from ui4.firmwaredialog import FirmwareDialog
+-    from PyQt4.QtGui import QApplication
+-    from ui4.firmwaredialog import FirmwareDialog
++    from PyQt5.QtWidgets import QApplication
++    from ui5.firmwaredialog import FirmwareDialog
+ 
+     app = QApplication(sys.argv)
+     form = FirmwareDialog(None, device_uri, False, True)
+
+--- a/align.py
++++ b/align.py
+@@ -235,8 +235,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.alignform import AlignForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.alignform import AlignForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.alignform import AlignForm
+ 
+         app = QApplication(sys.argv)
+         form = AlignForm(None, device_uri, False, True)
+
+--- a/sendfax.py
++++ b/sendfax.py
+@@ -203,8 +203,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.sendfaxform import SendFaxForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.sendfaxform import SendFaxForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.sendfaxform import SendFaxForm
+ 
+         app = QApplication(sys.argv)
+         form = SendFaxForm(None, device_uri, fax_number, filename, False, True)
+
+--- a/testpage.py
++++ b/testpage.py
+@@ -71,8 +71,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.testpageform import TestPageForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.testpageform import TestPageForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.testpageform import TestPageForm
+ 
+         app = QApplication(sys.argv)
+         form = TestPageForm(None, device_uri, False, True)
+
+--- a/devicesettings.py
++++ b/devicesettings.py
+@@ -119,8 +119,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.devicesettings import DeviceSettings
++            from PyQt5.QtWidgets import QApplication
++            from ui5.devicesettings import DeviceSettings
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/hpssd.py
++++ b/hpssd.py
+@@ -104,7 +104,7 @@ def main():
+         sys.exit(0)
+ 
+     try:
+-        from PyQt4.QtGui import QApplication
++        from PyQt5.QtWidgets import QApplication
+         from base.module import loadModule
+         app = QApplication(sys.argv)
+         mod = loadModule('hpssdform',
+
+--- a/config_usb_printer.py
++++ b/config_usb_printer.py
+@@ -113,8 +113,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.configusbdialog import ConfigUsbDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.configusbdialog import ConfigUsbDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/query.py
++++ b/query.py
+@@ -81,8 +81,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.querydialog import QueryDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.querydialog import QueryDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/doctor.py
++++ b/doctor.py
+@@ -126,8 +126,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.doctordialog import DoctorDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.doctordialog import DoctorDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/diagnose_queues.py
++++ b/diagnose_queues.py
+@@ -142,8 +142,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.queuediagnose import QueueDiagnose
++            from PyQt5.QtWidgets import QApplication
++            from ui5.queuediagnose import QueueDiagnose
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/probe.py
++++ b/probe.py
+@@ -78,8 +78,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.probedialog import ProbeDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.probedialog import ProbeDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/info.py
++++ b/info.py
+@@ -71,8 +71,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.infodialog import InfoDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.infodialog import InfoDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/timedate.py
++++ b/timedate.py
+@@ -62,8 +62,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.timedatedialog import TimeDateDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.timedatedialog import TimeDateDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/scan.py
++++ b/scan.py
+@@ -137,8 +137,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.scanform import ScanForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.scanform import ScanForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/pqdiag.py
++++ b/pqdiag.py
+@@ -60,8 +60,8 @@ def main():
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.pqdiagform import PqDiagForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.pqdiagform import PqDiagForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
