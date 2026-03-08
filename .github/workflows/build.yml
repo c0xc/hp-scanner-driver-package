@@ -142,6 +142,10 @@ jobs:
           "$OCI_BIN" build -t hp-scanner-driver-${{ matrix.distro }}-builder \
             -f Containerfile.${{ matrix.distro }} .
 
+      - name: Prepare output directory
+        run: |
+          mkdir -p output
+
       - name: Build package
         run: |
           "$OCI_BIN" run --rm \

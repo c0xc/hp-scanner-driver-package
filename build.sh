@@ -18,6 +18,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
+mkdir -p output
+
 DISTRO="${1:-all}"
 VERSION="${2:-latest}"
 
