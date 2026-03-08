@@ -4,7 +4,6 @@ packages/debian/source/
 packages/rpm/
 
 # Generated files
-*.tar.gz
 *.log
 
 # Patch management
@@ -17,3 +16,6 @@ hp-scanner-driver_*.orig.tar.gz
 
 # Build metadata
 build-output.log
+
+# HPLIP source tarballs (downloaded during build)
+hplip-*.tar.gz
