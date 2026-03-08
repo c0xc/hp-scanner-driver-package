@@ -4,7 +4,7 @@ on:
   # Monthly scheduled build (first day of each month at 02:00 UTC)
   schedule:
     - cron: '0 2 1 * *'
-  
+
   # Manual trigger with options
   workflow_dispatch:
     inputs:
@@ -13,18 +13,64 @@ on:
         required: false
         default: ''
         type: string
-      
+
+      target_set:
+        description: 'Which targets to build'
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - single
+          - custom
+
+      single_distro:
+        description: 'If target_set=single, which distro to build'
+        required: false
+        default: ubuntu-22.04
+        type: choice
+        options:
+          - ubuntu-22.04
+          - ubuntu-20.04
+          - debian-12
+          - fedora-39
+          - opensuse-15.5
+
       create_release:
         description: 'Create GitHub release with built packages'
         required: false
         default: false
         type: boolean
-      
-      distros:
-        description: 'Distributions to build (comma-separated: ubuntu-22.04,ubuntu-20.04,debian-12,fedora-39,opensuse-15.5)'
+
+      build_ubuntu_22_04:
+        description: 'Build for Ubuntu 22.04 / Mint 21.x'
         required: false
-        default: 'ubuntu-22.04,ubuntu-20.04,debian-12,fedora-39,opensuse-15.5'
-        type: string
+        default: true
+        type: boolean
+
+      build_ubuntu_20_04:
+        description: 'Build for Ubuntu 20.04 / Mint 20.x'
+        required: false
+        default: true
+        type: boolean
+
+      build_debian_12:
+        description: 'Build for Debian 12'
+        required: false
+        default: true
+        type: boolean
+
+      build_fedora_39:
+        description: 'Build for Fedora 39'
+        required: false
+        default: true
+        type: boolean
+
+      build_opensuse_15_5:
+        description: 'Build for openSUSE Leap 15.5'
+        required: false
+        default: true
+        type: boolean
 
 env:
   PODMAN_VERSION: '4.9'
@@ -35,11 +81,10 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.version.outputs.version }}
-      distros: ${{ steps.distros.outputs.distros }}
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Get version
         id: version
         run: |
@@ -48,25 +93,68 @@ jobs:
           else
             echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
           fi
-      
-      - name: Parse distro list
-        id: distros
+
+      - name: Build matrix JSON
+        id: matrix
         run: |
-          DISTROS="${{ github.event.inputs.distros }}"
-          if [ -z "$DISTROS" ]; then
-            DISTROS="ubuntu-22.04,ubuntu-20.04,debian-12,fedora-39,opensuse-15.5"
+          set -euo pipefail
+
+          ALL_DISTROS=(
+            "ubuntu-22.04"
+            "ubuntu-20.04"
+            "debian-12"
+            "fedora-39"
+            "opensuse-15.5"
+          )
+
+          DISTROS=()
+
+          # Non-workflow_dispatch events (e.g. schedule) have no inputs.
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            DISTROS=("${ALL_DISTROS[@]}")
+          else
+            TARGET_SET="${{ github.event.inputs.target_set }}"
+            case "$TARGET_SET" in
+              all|"")
+                DISTROS=("${ALL_DISTROS[@]}")
+                ;;
+              single)
+                DISTROS=("${{ github.event.inputs.single_distro }}")
+                ;;
+              custom)
+                [ "${{ github.event.inputs.build_ubuntu_22_04 }}" = "true" ] && DISTROS+=("ubuntu-22.04")
+                [ "${{ github.event.inputs.build_ubuntu_20_04 }}" = "true" ] && DISTROS+=("ubuntu-20.04")
+                [ "${{ github.event.inputs.build_debian_12 }}" = "true" ] && DISTROS+=("debian-12")
+                [ "${{ github.event.inputs.build_fedora_39 }}" = "true" ] && DISTROS+=("fedora-39")
+                [ "${{ github.event.inputs.build_opensuse_15_5 }}" = "true" ] && DISTROS+=("opensuse-15.5")
+                ;;
+              *)
+                echo "Unknown target_set: $TARGET_SET" >&2
+                exit 1
+                ;;
+            esac
           fi
-          echo "distros=$DISTROS" >> $GITHUB_OUTPUT
-          
-          # Convert to JSON array for matrix
-          MATRIX=$(echo "$DISTROS" | tr ',' '\n' | jq -R . | jq -s .)
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
-      
-      - name: Show build configuration
-        run: |
-          echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Distros: ${{ steps.distros.outputs.distros }}"
-          echo "Matrix: ${{ steps.matrix.outputs.matrix }}"
+
+          if [ "${#DISTROS[@]}" -eq 0 ]; then
+            echo "No distros selected; choose target_set=all/single or enable some custom checkboxes." >&2
+            exit 1
+          fi
+
+          # Build JSON array
+          JSON='['
+          FIRST=true
+          for d in "${DISTROS[@]}"; do
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              JSON+=','
+            fi
+            JSON+="\"$d\""
+          done
+          JSON+=']'
+
+          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+          echo "Building for: $JSON"
 
   # Build packages for each distribution
   build:
@@ -76,32 +164,48 @@ jobs:
       fail-fast: false
       matrix:
         distro: ${{ fromJson(needs.prepare.outputs.matrix) }}
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Podman
+
+      - name: Select OCI engine (prefer podman, fallback docker)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
-          podman --version
-      
+          set -euo pipefail
+
+          if ! command -v podman >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman || true
+          fi
+
+          if command -v podman >/dev/null 2>&1; then
+            OCI_BIN=podman
+            podman --version
+          elif command -v docker >/dev/null 2>&1; then
+            OCI_BIN=docker
+            docker --version
+          else
+            echo "Neither podman nor docker is available on the runner." >&2
+            exit 1
+          fi
+
+          echo "OCI_BIN=$OCI_BIN" >> "$GITHUB_ENV"
+
       - name: Build container image
         run: |
-          podman build -t hp-scanner-driver-${{ matrix.distro }}-builder \
+          "$OCI_BIN" build -t hp-scanner-driver-${{ matrix.distro }}-builder \
             -f Containerfile.${{ matrix.distro }} .
-      
+
       - name: Build package
         run: |
-          podman run --rm \
+          "$OCI_BIN" run --rm \
             -v ${{ github.workspace }}/output:/build/output \
             hp-scanner-driver-${{ matrix.distro }}-builder \
             ${{ needs.prepare.outputs.version }}
-      
+
       - name: List built packages
         run: |
           ls -lh output/
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -109,6 +213,10 @@ jobs:
           path: |
             output/*.deb
             output/*.rpm
+            output/*.dsc
+            output/*.src.rpm
+            output/*.tar.*
+            output/*.log
           retention-days: 30
 
   # Create release if requested
@@ -116,72 +224,75 @@ jobs:
     needs: [prepare, build]
     runs-on: ubuntu-22.04
     if: github.event.inputs.create_release == 'true'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
-      
+
       - name: Collect all packages
         run: |
           mkdir -p release-packages
-          find artifacts/ -name "*.deb" -o -name "*.rpm" | xargs -I {} cp {} release-packages/
+          # Release assets:
+          # - Include installable binaries (*.deb/*.rpm) for end users.
+          # - Include source artifacts (*.dsc, *.tar.*, *.src.rpm) for admins/maintainers/compliance.
+          # - Exclude logs.
+          find artifacts/ -type f \
+            \( -name "*.deb" -o -name "*.rpm" \) \
+            -print0 | xargs -0 -I {} cp {} release-packages/
+
+          find artifacts/ -type f \
+            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" \) \
+            -print0 | while IFS= read -r -d '' f; do
+              base="$(basename "$f")"
+              cp "$f" "release-packages/ADMIN-${base}"
+            done
           ls -lh release-packages/
-      
+
       - name: Create release notes
         run: |
-          cat > RELEASE_NOTES.md << EOF
+          cat > RELEASE_NOTES.md << ENDNOTES
           # hp-scanner-driver ${{ needs.prepare.outputs.version }}
-          
-          Automated build for the following distributions:
-          
-          ${{ needs.prepare.outputs.distros }}
-          
+
+          Automated build for multiple Linux distributions.
+
           ## Installation
-          
+
           ### Debian/Ubuntu/Mint
-          
-          \`\`\`bash
-          sudo apt install ./hp-scanner-driver_*${{ needs.prepare.outputs.version }}*.deb
-          \`\`\`
-          
+
+            sudo apt install ./hp-scanner-driver_*${{ needs.prepare.outputs.version }}*.deb
+
           ### Fedora/openSUSE
-          
-          \`\`\`bash
-          sudo dnf install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
-          # or
-          sudo zypper install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
-          \`\`\`
-          
+
+            sudo dnf install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
+            # or
+            sudo zypper install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
+
           ## Important Notes
-          
+
           ### Proprietary Plugin
-          
+
           Some HP devices require a proprietary plugin for scanning. If scanning fails with "Error during device I/O", run:
-          
-          \`\`\`bash
-          hp-plugin -i
-          \`\`\`
-          
+
+            hp-plugin -i
+
           ### Python Shebang Fix
-          
+
           If GUI tools fail with python2 errors, run:
-          
-          \`\`\`bash
-          sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
-          \`\`\`
-          
+
+            sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
+
           ## Documentation
-          
+
           - See README.md for installation instructions
           - See TEST.md for test results
           - See PAIN.md for known issues
-          EOF
+          ENDNOTES
           cat RELEASE_NOTES.md
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:

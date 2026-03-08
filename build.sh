@@ -21,12 +21,26 @@ cd "$SCRIPT_DIR"
 DISTRO="${1:-all}"
 VERSION="${2:-latest}"
 
+# Container engine (prefer podman, fallback docker)
+# Allow override via OCI_BIN or CONTAINER_ENGINE.
+OCI_BIN="${OCI_BIN:-${CONTAINER_ENGINE:-}}"
+if [ -z "$OCI_BIN" ]; then
+    if command -v podman >/dev/null 2>&1; then
+        OCI_BIN=podman
+    elif command -v docker >/dev/null 2>&1; then
+        OCI_BIN=docker
+    else
+        echo "Error: neither podman nor docker found in PATH" >&2
+        exit 127
+    fi
+fi
+
 build_deb() {
     local distro="$1"
     local version="$2"
     echo "=== Building DEB package for $distro ==="
-    podman build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
-    podman run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
+    "$OCI_BIN" build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
+    "$OCI_BIN" run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
     echo "=== DEB build complete for $distro ==="
 }
 
@@ -34,8 +48,8 @@ build_rpm() {
     local distro="$1"
     local version="$2"
     echo "=== Building RPM package for $distro ==="
-    podman build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
-    podman run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
+    "$OCI_BIN" build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
+    "$OCI_BIN" run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
     echo "=== RPM build complete for $distro ==="
 }
 
@@ -44,13 +58,13 @@ clean() {
     rm -f output/*.deb output/*.rpm output/*.log output/*.dsc output/*.tar.xz output/*.src.rpm
     rm -rf output/hplip-*/
     # Remove old container images
-    podman rmi hp-scanner-driver-debian-12-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-ubuntu-20.04-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-ubuntu-22.04-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-fedora-39-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-opensuse-15.5-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-deb-builder 2>/dev/null || true
-    podman rmi hp-scanner-driver-rpm-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-debian-12-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-ubuntu-20.04-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-ubuntu-22.04-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-fedora-39-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-opensuse-15.5-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-deb-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-rpm-builder 2>/dev/null || true
     echo "=== Clean complete ==="
 }
 
