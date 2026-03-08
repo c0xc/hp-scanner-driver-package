@@ -5,7 +5,7 @@
 
 ---
 
-## The Two-Package Debacle ✓ FIXED
+## The Two-Package Debacle [FIXED]
 
 **Symptom:**
 ```
@@ -36,10 +36,10 @@ Removed the GUI subpackage entirely. Everything goes in one package now. If you 
 **Violations Found:**
 
 ### 1. build-deb.sh and build-rpm.sh run `apt-get build-dep` INSIDE the container
-**Status:** ✅ Actually OK - this runs inside the container, not on host.
+**Status:** PASS Actually OK - this runs inside the container, not on host.
 
 ### 2. Build scripts use command substitution `$(...)` 
-**Status:** ⚠️ Violates STYLE.md but not the container rule.
+**Status:** WARNING: Violates STYLE.md but not the container rule.
 - `build.sh:7`: `SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"`
 - `build-deb.sh:8-9`: Multiple `$(...)` calls
 - `build-rpm.sh:8-9`: Multiple `$(...)` calls
@@ -48,7 +48,7 @@ Removed the GUI subpackage entirely. Everything goes in one package now. If you 
 **Why it matters:** STYLE.md says no command substitution, but these are necessary for portable shell scripts. The style guide is unrealistic here. Either update the style guide or accept that modern shell scripts need `$(...)`.
 
 ### 3. Containerfiles use `$(cat /build/VERSION)`
-**Status:** ⚠️ Same issue - command substitution in Containerfile.deb and Containerfile.rpm.
+**Status:** WARNING: Same issue - command substitution in Containerfile.deb and Containerfile.rpm.
 
 **Fix Options:**
 1. Update STYLE.md to allow `$(...)` for necessary operations
@@ -58,7 +58,7 @@ Removed the GUI subpackage entirely. Everything goes in one package now. If you 
 
 ---
 
-## Naming Confusion ✓ DECIDED
+## Naming Confusion [DECIDED]
 
 **Old Name:** `hplip-unofficial`
 
@@ -73,7 +73,7 @@ Removed the GUI subpackage entirely. Everything goes in one package now. If you 
 
 **Rejected Ideas:**
 - `hp-hplip-rebuild` - redundant ("hp" + "hplip")
-- `pfu-scanner-rebuild` - "pfu" sounds like "pfui" (German: what you say to a cat licking something it shouldn't) 🙀
+- `pfu-scanner-rebuild` - "pfu" sounds like "pfui" (German: what you say to a cat licking something it shouldn't) 
 - Anything with "rebuild" in the name - users don't care it's a rebuild, they care that it **works**
 - Mentioning specific fixes like "Qt5" in the name/description - that's just one of many bugs fixed
 
@@ -104,14 +104,14 @@ Removed the GUI subpackage entirely. Everything goes in one package now. If you 
 
 **Potential Issues:**
 1. **Output directory pollution:** `output/` contains build artifacts from previous runs including:
-   - `.dsc` files showing the two-package problem
-   - Multiple `.tar.xz` and `.tar.gz` variants
-   - RPM files with debuginfo packages (despite trying to disable them)
+ - `.dsc` files showing the two-package problem
+ - Multiple `.tar.xz` and `.tar.gz` variants
+ - RPM files with debuginfo packages (despite trying to disable them)
 
 2. **Documentation references:** README.md mentions `hplip-unofficial` consistently, but other approach directories use different names:
-   - `hplip-drivers` uses `hp-drivers-minimal`
-   - Approach 2 docs mention `hplip-custom`
-   - Approach 3 docs mention PPA naming
+ - `hplip-drivers` uses `hp-drivers-minimal`
+ - Approach 2 docs mention `hplip-custom`
+ - Approach 3 docs mention PPA naming
 
 **Cleanup Needed:**
 1. Run `./build.sh clean` before first proper build
@@ -239,7 +239,7 @@ override_dh_strip:
 - debian/prerm removes it on uninstall
 - RPM %post and %preun do the same
 
-**Status:** ✅ This is correct and follows modern SANE best practices.
+**Status:** PASS This is correct and follows modern SANE best practices.
 
 ---
 
@@ -284,13 +284,13 @@ wget https://github.com/c0xc/hplip-packages/releases/...
 
 ## Summary of Action Items
 
-### Critical (Must Fix Before First Release) ✓ ALL DONE
+### Critical (Must Fix Before First Release) FIXED ALL DONE
 
-1. ✅ **Two-package problem:** Removed `hplip-unofficial-gui` from debian/control and RPM spec
-2. ✅ **RPM Python path:** Changed to `/usr/lib64/python3*/site-packages/*.so` (glob pattern)
-3. ✅ **RPM doc path:** Changed to `%{_docdir}/%{name}-%{version}/`
-4. ✅ **Naming decision:** `hp-scanner-driver` (scales to `fujitsu-scanner-driver`, etc.)
-5. ✅ **Maintainer info:** Updated throughout (still placeholder email, but consistent)
+1. PASS **Two-package problem:** Removed `hplip-unofficial-gui` from debian/control and RPM spec
+2. PASS **RPM Python path:** Changed to `/usr/lib64/python3*/site-packages/*.so` (glob pattern)
+3. PASS **RPM doc path:** Changed to `%{_docdir}/%{name}-%{version}/`
+4. PASS **Naming decision:** `hp-scanner-driver` (scales to `fujitsu-scanner-driver`, etc.)
+5. PASS **Maintainer info:** Updated throughout (still placeholder email, but consistent)
 
 ### Important (Should Fix)
 1. **Patch management:** Create version-agnostic patches or document patch generation process
@@ -306,11 +306,11 @@ wget https://github.com/c0xc/hplip-packages/releases/...
 5. **Old build artifacts:** Clean `output/` directory (contains old `hplip-unofficial-*` files)
 
 ### Already Done Right
-1. ✅ SANE drop-in config (dll.d/) - no more file conflicts
-2. ✅ Container-based builds - no host pollution
-3. ✅ Qt4→Qt5 patches - version-specific but working
-4. ✅ PIE workaround for RPM - documented and acceptable
-5. ✅ Bug documentation - BUGFIX-*.md files are thorough
+1. PASS SANE drop-in config (dll.d/) - no more file conflicts
+2. PASS Container-based builds - no host pollution
+3. PASS Qt4->Qt5 patches - version-specific but working
+4. PASS PIE workaround for RPM - documented and acceptable
+5. PASS Bug documentation - BUGFIX-*.md files are thorough
 
 ---
 
@@ -386,4 +386,159 @@ When you come back to this in 6 months and wonder why anything is broken:
 7. **openSUSE Leap 16?** - Create Containerfile.opensuse-16.0, update 15.5 to "legacy"
 8. **Dependency names changed?** - Check Containerfiles for package name updates
 
-Good luck. You'll need it.
+---
+
+## Python Syntax Errors in HPLIP Source
+
+**WARNING:** HPLIP source code contains Python syntax errors that break after patching!
+
+### Known Issues Found (3.25.8)
+
+1. **`base/utils.py` - `checkPyQtImport4()` function (line ~811)**
+ - Original code tries PyQt4, falls back to PyQt5
+ - Our Qt4->Qt5 patch broke the try/except/else structure
+ - Result: `IndentationError` or `SyntaxError`
+ - **Fix:** Manually patch the function to only try PyQt5
+
+2. **Shebang issues**
+ - Installed scripts have `#!/usr/bin/python2` hardcoded
+ - Container has no python2, only python3
+ - **Fix:** `sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py`
+
+### Why This Happens
+
+HPLIP's codebase is 20+ years old with:
+- Mixed Python 2/3 compatibility code
+- Fragile patch points that break easily
+- No proper CI/CD testing for Python syntax
+- Patches that modify control flow (try/except/else) without proper testing
+
+### What to Expect
+
+**More syntax errors will appear** when:
+- Using different HPLIP versions
+- Applying patches to new upstream releases
+- Running less-used tools (hp-faxsetup, hp-colorcal, etc.)
+
+### Debugging Tips
+
+```bash
+# Check which script is failing
+head -1 /usr/share/hplip/*.py | grep python2
+
+# Fix all shebangs at once
+sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
+
+# Check for syntax errors
+python3 -m py_compile /usr/share/hplip/base/utils.py
+
+# Run with verbose error output
+python3 -u /usr/share/hplip/setup.py
+```
+
+### Long-Term Fix Needed
+
+Create a proper `03-python-syntax-fixes.patch` that:
+1. Fixes all shebangs to `#!/usr/bin/env python3`
+2. Fixes `checkPyQtImport4()` function properly
+3. Runs `python3 -m py_compile` on all `.py` files during build
+4. Fails the build if any syntax errors are found
+
+---
+
+## GUI Issues with Network Scanner Setup
+
+**Problem:** hp-setup GUI has confusing network device setup
+
+### Symptoms Observed (Mint 21.3, 3.25.8)
+
+1. Wrong default selection: GUI shows "USB" or "Local" as default instead of "Network"
+2. Invalid URI format: GUI prefixes IP with "net:" automatically, causes error
+3. Workaround required: User must manually remove "net:" prefix from IP address
+
+### Expected Behavior
+
+User enters: 10.10.2.66
+GUI should detect: hp:/net/HP_Color_LaserJet_MFP_M476dw?ip=10.10.2.66
+
+### Actual Behavior
+
+User enters: 10.10.2.66
+GUI changes to: net:10.10.2.66
+Error: Invalid manual discovery parameter
+
+User removes "net:": 10.10.2.66
+Works: Device found at hp:/net/HP_Color_LaserJet_MFP_M476dw?ip=10.10.2.66
+
+### Scanner Detection Status
+
+After setup completes:
+- scanimage -L shows device (PASS)
+- Scan I/O fails with "Error during device I/O" (FAIL)
+
+This suggests device discovery works, SANE backend loads correctly, but network communication has issues.
+
+### Debugging Commands
+
+    scanimage -L
+    scanimage -d "hpaio:/net/HP_Color_LaserJet_MFP_M476dw?ip=10.10.2.66" --format=png > test.png
+    ping 10.10.2.66
+    nc -zv 10.10.2.66 9100
+
+---
+
+---
+
+
+---
+
+## HP Plugin System - Critical Issue
+
+**WARNING: MAJOR GOTCHA:** HP's proprietary plugin system breaks first-time scanning!
+
+### What Happens
+
+1. User installs hp-scanner-driver package
+2. Scanner is detected by scanimage -L
+3. First scan attempt FAILS with "Error during device I/O"
+4. Plugin dialog appears (hp-plugin)
+5. User must install proprietary plugin
+6. Scanning then works
+
+### Why This Is Terrible UX
+
+- No warning during package installation about plugin requirement
+- Scanner appears to work (detected) but does not function
+- Error message "Error during device I/O" is unhelpful
+- Plugin installation is a separate step users do not expect
+- This is HP's DRM/proprietary blob requirement, not our bug
+
+### Which Devices Need Plugins
+
+Typically:
+- HP Color LaserJet MFP models (like M476dw)
+- Devices with advanced scanning features
+- Some fax-capable devices
+
+### How to Fix
+
+    hp-plugin -i   (interactive installation)
+    or
+    hp-plugin -u   (automatic installation, requires internet)
+
+### Debugging Commands
+
+    hp-check -t 2>&1 | grep -i plugin
+    hp-plugin --status
+
+### Files Involved
+
+- /usr/share/hplip/plugin.py - Plugin installation script
+- /usr/share/hplip/plugins/ - Plugin directory (created after install)
+- /usr/bin/hp-plugin - Plugin utility
+
+### Resolution
+
+This is HP's proprietary plugin requirement, not a package bug. Users must install the plugin for affected devices.
+
+---

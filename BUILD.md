@@ -28,8 +28,8 @@ Output: `output/hp-scanner-driver_*.{deb,rpm}` with distro-specific names
 | Ubuntu 22.04 | `Containerfile.ubuntu-22.04` | `hp-scanner-driver_3.25.8-1~ubuntu-22.04_amd64.deb` |
 
 **Mint Compatibility:**
-- Mint 20.x → Use `ubuntu-20.04` build
-- Mint 21.x → Use `ubuntu-22.04` build
+- Mint 20.x -> Use `ubuntu-20.04` build
+- Mint 21.x -> Use `ubuntu-22.04` build
 
 ### RPM Packages
 
@@ -90,13 +90,13 @@ After building all variants, `output/` contains:
 
 ```
 output/
-├── hp-scanner-driver_3.25.8-1~debian-12_amd64.deb
-├── hp-scanner-driver_3.25.8-1~ubuntu-20.04_amd64.deb
-├── hp-scanner-driver_3.25.8-1~ubuntu-22.04_amd64.deb
-├── hp-scanner-driver-3.25.8-1.fc39.x86_64.rpm
-├── hp-scanner-driver-3.25.8-1.lp155.x86_64.rpm
-├── install-stdout-*.log      # Installation test logs
-└── install-stderr-*.log      # Installation test logs
+  - hp-scanner-driver_3.25.8-1~debian-12_amd64.deb
+  - hp-scanner-driver_3.25.8-1~ubuntu-20.04_amd64.deb
+  - hp-scanner-driver_3.25.8-1~ubuntu-22.04_amd64.deb
+  - hp-scanner-driver-3.25.8-1.fc39.x86_64.rpm
+  - hp-scanner-driver-3.25.8-1.lp155.x86_64.rpm
+  - install-stdout-*.log      # Installation test logs
+  - install-stderr-*.log      # Installation test logs
 ```
 
 ---

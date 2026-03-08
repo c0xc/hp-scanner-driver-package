@@ -1,83 +1,13 @@
-diff -ruN hplip-3.25.8.orig/align.py hplip-3.25.8/align.py
---- hplip-3.25.8.orig/align.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/align.py	2026-02-21 01:38:13.307801701 +0100
-@@ -153,7 +153,7 @@
-     log.info("Using device : %s\n" % device_uri)
-     if mode == GUI_MODE:
-         if not utils.canEnterGUIMode4():
--            log.error("%s -u/--gui requires Qt4 GUI support. Entering interactive mode." % __mod__)
-+            log.error("%s -u/--gui requires Qt5 GUI support. Entering interactive mode." % __mod__)
-             mode = INTERACTIVE_MODE
- 
-     if mode == INTERACTIVE_MODE:
-@@ -235,10 +235,10 @@
- 
-     else: # GUI_MODE (qt4)
-         # try:
--        #     from PyQt4.QtGui import QApplication
-+        #     from PyQt5.QtWidgets import QApplication
-         #     from ui4.aligndialog import AlignDialog
-         # except ImportError:
--        #     log.error("Unable to load Qt4 support. Is it installed?")
-+        #     log.error("Unable to load Qt5 support. Is it installed?")
-         #     sys.exit(1)
-         QApplication, ui_package = utils.import_dialog(ui_toolkit)
-         ui = import_module(ui_package + ".aligndialog")
-diff -ruN hplip-3.25.8.orig/base/utils.py hplip-3.25.8/base/utils.py
---- hplip-3.25.8.orig/base/utils.py	2026-02-21 01:35:28.763043455 +0100
-+++ hplip-3.25.8/base/utils.py	2026-02-21 01:38:13.307801701 +0100
-@@ -572,7 +572,7 @@
-         return found_path
- 
- 
--class UserSettings(object): # Note: Deprecated after 2.8.8 in Qt4 (see ui4/ui_utils.py)
-+class UserSettings(object): # Note: Deprecated after 2.8.8 in Qt5 (see ui4/ui_utils.py)
-     def __init__(self):
-         self.load()
- 
-@@ -745,7 +745,7 @@
-         return False
- 
-     # elif not checkPyQtImport4():
--    #     log.warn("Qt4/PyQt 4 initialization failed.")
-+    #     log.warn("Qt5/PyQt 4 initialization failed.")
-     #     return False
-     else:
-         try:
-@@ -809,11 +809,6 @@
- 
- 
- def checkPyQtImport4():
--    try:
--        import PyQt4
--        import ui4
--    except ImportError:
--        import PyQt5
-+    try:
-+        import PyQt5
-         import ui5
-     else:
-         log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
-@@ -1638,15 +1633,15 @@
- 
- if sys_conf.get('configure', 'ui-toolkit', 'qt3') == 'qt3':
-     USAGE_USE_QT3 = ("Use Qt3:",  "--qt3 (Default)",  "option",  False)
--    USAGE_USE_QT4 = ("Use Qt4:",  "--qt4",  "option",  False)
-+    USAGE_USE_QT4 = ("Use Qt5:",  "--qt4",  "option",  False)
-     USAGE_USE_QT5 = ("Use Qt5:",  "--qt5",  "option",  False)
- elif sys_conf.get('configure', 'ui-toolkit', 'qt4') == 'qt4':
-     USAGE_USE_QT3 = ("Use Qt3:",  "--qt3",  "option",  False)
--    USAGE_USE_QT4 = ("Use Qt4:",  "--qt4 (Default)",  "option",  False)
-+    USAGE_USE_QT4 = ("Use Qt5:",  "--qt4 (Default)",  "option",  False)
-     USAGE_USE_QT5 = ("Use Qt5:",  "--qt5",  "option",  False)
- elif sys_conf.get('configure', 'ui-toolkit', 'qt5') == 'qt5':
-     USAGE_USE_QT3 = ("Use Qt3:",  "--qt3",  "option",  False)
--    USAGE_USE_QT4 = ("Use Qt4:",  "--qt4",  "option",  False)
-+    USAGE_USE_QT4 = ("Use Qt5:",  "--qt4",  "option",  False)
-     USAGE_USE_QT5 = ("Use Qt5:",  "--qt5 (Default)",  "option",  False)
- 
- def ttysize(): # TODO: Move to base/tui
-@@ -2483,13 +2478,7 @@
+# Qt4 to Qt5 Migration Patch
+# Maintainer: c0xc
+# Migrates HPLIP from obsolete Qt4 to Qt5
+
+--- a/base/utils.py
++++ b/base/utils.py
+@@ -2478,17 +2478,11 @@ def checkPyQtImport45():
+     try:
+         import PyQt5
+         return "PyQt5"
      except ImportError as e:
          log.debug(e)
  
@@ -92,7 +22,8 @@ diff -ruN hplip-3.25.8.orig/base/utils.py hplip-3.25.8/base/utils.py
  
  
  def ui_status():
-@@ -2505,9 +2494,9 @@
+@@ -2502,11 +2496,11 @@ def ui_status():
+ 
  def import_dialog(ui_toolkit):
      if ui_toolkit == "qt4":
          try:
@@ -105,452 +36,405 @@ diff -ruN hplip-3.25.8.orig/base/utils.py hplip-3.25.8/base/utils.py
          except ImportError as e:
              log.error(e)
              sys.exit(1)
-diff -ruN hplip-3.25.8.orig/check-plugin.py hplip-3.25.8/check-plugin.py
---- hplip-3.25.8.orig/check-plugin.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/check-plugin.py	2026-02-21 01:38:13.307801701 +0100
-@@ -65,15 +65,15 @@
- def install_Plugin(systray_running_status, run_directly=False):
-     if run_directly:
-         if not utils.canEnterGUIMode4():
--            log.error("%s requires GUI support . Is Qt4 installed?" % __mod__)
-+            log.error("%s requires GUI support . Is Qt5 installed?" % __mod__)
+
+--- a/colorcal.py
++++ b/colorcal.py
+@@ -231,9 +231,9 @@ def main():
+ 
+     else:
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.colorcaldialog import ColorCalDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.colorcaldialog import ColorCalDialog
+         except ImportError:
+-            log.error("Unable to load Qt4 support. Is it installed?")
++            log.error("Unable to load Qt5 support. Is it installed?")
+             sys.exit(1)
+ 
+         #try:
+
+--- a/linefeedcal.py
++++ b/linefeedcal.py
+@@ -61,8 +61,8 @@ def main():
+         sys.exit(1)
+ 
+     try:
+-        from PyQt4.QtGui import QApplication
+-        from ui4.linefeedcaldialog import LineFeedCalDialog
++        from PyQt5.QtWidgets import QApplication
++        from ui5.linefeedcaldialog import LineFeedCalDialog
+     except ImportError:
+         log.error("Unable to load Qt support. Is it installed?")
+         sys.exit(1)
+
+--- a/check-plugin.py
++++ b/check-plugin.py
+@@ -70,8 +70,8 @@ def main():
              sys.exit(1)
  
          try:
 -            from PyQt4.QtGui import QApplication, QMessageBox
+-            from ui4.plugindiagnose import PluginDiagnose
 +            from PyQt5.QtWidgets import QApplication, QMessageBox
-             from ui4.plugindiagnose import PluginDiagnose
++            from ui5.plugindiagnose import PluginDiagnose
              from installer import core_install
          except ImportError:
--            log.error("Unable to load Qt4 support. Is it installed?")
-+            log.error("Unable to load Qt5 support. Is it installed?")
+             log.error("Unable to load Qt support. Is it installed?")
+
+--- a/plugin.py
++++ b/plugin.py
+@@ -256,8 +256,8 @@ def main():
              sys.exit(1)
  
-         app = QApplication(sys.argv)
-diff -ruN hplip-3.25.8.orig/colorcal.py hplip-3.25.8/colorcal.py
---- hplip-3.25.8.orig/colorcal.py	2026-02-21 01:35:29.007038649 +0100
-+++ hplip-3.25.8/colorcal.py	2026-02-21 01:38:13.307801701 +0100
-@@ -174,7 +174,7 @@
-     log.info("Using device : %s\n" % device_uri)
-     if mode == GUI_MODE:
-         if not utils.canEnterGUIMode4():
--            log.error("%s -u/--gui requires Qt4 GUI support. Entering interactive mode." % __mod__)
-+            log.error("%s -u/--gui requires Qt5 GUI support. Entering interactive mode." % __mod__)
-             mode = INTERACTIVE_MODE
+             try:
+-                from PyQt4.QtGui import QMessageBox
+-                from ui4.pluginform import PluginForm
++                from PyQt5.QtWidgets import QMessageBox
++                from ui5.pluginform import PluginForm
+             except ImportError:
+                 log.error("Unable to load Qt support. Is it installed?")
+                 sys.exit(1)
+
+--- a/makecopies.py
++++ b/makecopies.py
+@@ -232,8 +232,8 @@ def main():
  
-     if mode == INTERACTIVE_MODE:
-@@ -230,10 +230,10 @@
- 
-     else:
          try:
 -            from PyQt4.QtGui import QApplication
+-            from ui4.makecopiesform import MakeCopiesForm
 +            from PyQt5.QtWidgets import QApplication
-             from ui4.colorcaldialog import ColorCalDialog
++            from ui5.makecopiesform import MakeCopiesForm
          except ImportError:
--            log.error("Unable to load Qt4 support. Is it installed?")
-+            log.error("Unable to load Qt5 support. Is it installed?")
+             log.error("Unable to load Qt support. Is it installed?")
              sys.exit(1)
+
+--- a/upgrade.py
++++ b/upgrade.py
+@@ -346,8 +346,8 @@ def main():
+                     sys.exit(1)
  
-         #try:
-diff -ruN hplip-3.25.8.orig/devicesettings.py hplip-3.25.8/devicesettings.py
---- hplip-3.25.8.orig/devicesettings.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/devicesettings.py	2026-02-21 01:38:13.307801701 +0100
-@@ -65,14 +65,14 @@
+                     try:
+-                        from PyQt4.QtGui import QApplication, QMessageBox
+-                        from ui4.upgradeform import UpgradeForm
++                        from PyQt5.QtWidgets import QApplication, QMessageBox
++                        from ui5.upgradeform import UpgradeForm
+                     except ImportError:
+                         log.error("Unable to load Qt support. Is it installed?")
+                         sys.exit(1)
+
+--- a/pqdiag.py
++++ b/pqdiag.py
+@@ -60,8 +60,8 @@ def main():
  
-     log.info("Using device : %s\n" % device_uri)
-     if not utils.canEnterGUIMode4():
--        log.error("%s -u/--gui requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s -u/--gui requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
- 
-     # try:
--    #     from PyQt4.QtGui import QApplication
-+    #     from PyQt5.QtWidgets import QApplication
-     #     from ui4.devicesetupdialog import DeviceSetupDialog
-     # except ImportError:
--    #     log.error("Unable to load Qt4 support. Is it installed?")
-+    #     log.error("Unable to load Qt5 support. Is it installed?")
-     #     sys.exit(1)
-     QApplication, ui_package = utils.import_dialog(ui_toolkit)
-     ui = import_module(ui_package + ".devicesetupdialog")
-diff -ruN hplip-3.25.8.orig/faxsetup.py hplip-3.25.8/faxsetup.py
---- hplip-3.25.8.orig/faxsetup.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/faxsetup.py	2026-02-21 01:38:13.307801701 +0100
-@@ -63,14 +63,14 @@
-         sys.exit(1)
- 
-     if not utils.canEnterGUIMode4():
--        log.error("%s requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
- 
-     # try:
--    #     from PyQt4.QtGui import QApplication
-+    #     from PyQt5.QtWidgets import QApplication
-     #     from ui4.faxsetupdialog import FaxSetupDialog
-     # except ImportError:
--    #     log.error("Unable to load Qt4 support. Is it installed?")
-+    #     log.error("Unable to load Qt5 support. Is it installed?")
-     #     sys.exit(1)        
-     QApplication, ui_package = utils.import_dialog(ui_toolkit)
-     ui = import_module(ui_package + ".faxsetupdialog")
-diff -ruN hplip-3.25.8.orig/firmware.py hplip-3.25.8/firmware.py
---- hplip-3.25.8.orig/firmware.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/firmware.py	2026-02-21 01:38:13.307801701 +0100
-@@ -98,7 +98,7 @@
- 
-     if mode == GUI_MODE and (ui_toolkit == 'qt4' or ui_toolkit == 'qt5'):
-         if not utils.canEnterGUIMode4():
--            log.error("%s -u/--gui requires Qt4/Qt5 GUI support. Entering interactive mode." % __mod__)
-+            log.error("%s -u/--gui requires Qt5/Qt5 GUI support. Entering interactive mode." % __mod__)
-             mode = INTERACTIVE_MODE4
- 
-     elif mode == GUI_MODE and ui_toolkit == 'qt3':
-@@ -112,10 +112,10 @@
-     if mode == GUI_MODE:
-         if ui_toolkit == 'qt4'or ui_toolkit == 'qt5':
-            # try:
--           #  from PyQt4.QtGui import QApplication
-+           #  from PyQt5.QtWidgets import QApplication
-            #  from ui4.firmwaredialog import FirmwareDialog
-            # except ImportError:
--           #  log.error("Unable to load Qt4 support. Is it installed?")
-+           #  log.error("Unable to load Qt5 support. Is it installed?")
-            #  sys.exit(1)
-             QApplication, ui_package = utils.import_dialog(ui_toolkit)
-             ui = import_module(ui_package + ".firmwaredialog")
-diff -ruN hplip-3.25.8.orig/hpssd.py hplip-3.25.8/hpssd.py
---- hplip-3.25.8.orig/hpssd.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/hpssd.py	2026-02-21 01:38:13.307801701 +0100
-@@ -326,7 +326,7 @@
-         [f[x].debug() for x in f]
- 
- 
--# Qt4 only
-+# Qt5 only
- def handle_hpdio_event(event, bytes_written):
-     log.debug("Reading %d bytes from hpdio pipe..." % bytes_written)
-     total_read, data = 0, to_bytes_utf8('')
-@@ -482,28 +482,28 @@
-         #send_event_to_hpdio(event)
-         send_event_to_systray_ui(event)
- 
--    # Qt4 only
-+    # Qt5 only
-     elif event.event_code in (EVENT_DEVICE_UPDATE_REQUESTED,):
-                               #EVENT_DEVICE_START_POLLING,  # ?  Who handles polling? hpssd? probably...
-                               #EVENT_DEVICE_STOP_POLLING):  # ?
-         send_event_to_hpdio(event)
- 
--    # Qt4 only
-+    # Qt5 only
-     elif event.event_code in (EVENT_DEVICE_UPDATE_ACTIVE,
-                               EVENT_DEVICE_UPDATE_INACTIVE):
-         send_event_to_systray_ui(event)
- 
--    # Qt4 only
-+    # Qt5 only
-     elif event.event_code == EVENT_DEVICE_UPDATE_REPLY:
-         bytes_written = int(more_args[1])
-         handle_hpdio_event(event, bytes_written)
- 
--    # Qt4 only
-+    # Qt5 only
-     elif event.event_code == EVENT_CUPS_QUEUES_ADDED or event.event_code == EVENT_CUPS_QUEUES_REMOVED:
-         send_event_to_systray_ui(event)
-         send_toolbox_event(event, EVENT_HISTORY_UPDATE)
- 
--    # Qt4 only
-+    # Qt5 only
-     elif event.event_code == EVENT_SYSTEMTRAY_EXIT:
-         send_event_to_hpdio(event)
-         send_toolbox_event(event)
-diff -ruN hplip-3.25.8.orig/info.py hplip-3.25.8/info.py
---- hplip-3.25.8.orig/info.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/info.py	2026-02-21 01:38:13.307801701 +0100
-@@ -77,7 +77,7 @@
- 
-     if mode == GUI_MODE:
-         if not utils.canEnterGUIMode4():
--            log.error("%s -u/--gui requires Qt4 GUI support. Entering interactive mode." % __mod__)
-+            log.error("%s -u/--gui requires Qt5 GUI support. Entering interactive mode." % __mod__)
-             mode = INTERACTIVE_MODE
- 
-     if mode == GUI_MODE:
-diff -ruN hplip-3.25.8.orig/linefeedcal.py hplip-3.25.8/linefeedcal.py
---- hplip-3.25.8.orig/linefeedcal.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/linefeedcal.py	2026-02-21 01:38:13.307801701 +0100
-@@ -56,14 +56,14 @@
-         sys.exit(1)
- 
-     if not utils.canEnterGUIMode4():
--        log.error("%s -u/--gui requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s -u/--gui requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
- 
-     try:
--        from PyQt4.QtGui import QApplication
-+        from PyQt5.QtWidgets import QApplication
-         from ui4.linefeedcaldialog import LineFeedCalDialog
-     except ImportError:
--        log.error("Unable to load Qt4 support. Is it installed?")
-+        log.error("Unable to load Qt5 support. Is it installed?")
-         sys.exit(1)
- 
- 
-diff -ruN hplip-3.25.8.orig/makecopies.py hplip-3.25.8/makecopies.py
---- hplip-3.25.8.orig/makecopies.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/makecopies.py	2026-02-21 01:38:13.307801701 +0100
-@@ -23,7 +23,7 @@
- __version__ = '4.0'
- __title__ = "Make Copies Utility"
- __mod__ = 'hp-makecopies'
--__doc__ = "PC initiated make copies function on supported HP AiO and MFP devices. (Note: Currently unsupported in Qt4.)"
-+__doc__ = "PC initiated make copies function on supported HP AiO and MFP devices. (Note: Currently unsupported in Qt5.)"
- 
- # Std Lib
- import sys
-@@ -232,10 +232,10 @@
- 
-     else: # qt4
          try:
 -            from PyQt4.QtGui import QApplication
+-            from ui4.pqdiagform import PqDiagForm
 +            from PyQt5.QtWidgets import QApplication
-             from ui4.makecopiesdialog import MakeCopiesDialog
++            from ui5.pqdiagform import PqDiagForm
          except ImportError:
--            log.error("Unable to load Qt4 support. Is it installed?")
-+            log.error("Unable to load Qt5 support. Is it installed?")
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/faxsetup.py
++++ b/faxsetup.py
+@@ -67,8 +67,8 @@ def main():
              sys.exit(1)
  
-         #try:
-diff -ruN hplip-3.25.8.orig/plugin.py hplip-3.25.8/plugin.py
---- hplip-3.25.8.orig/plugin.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/plugin.py	2026-02-21 01:38:13.307801701 +0100
-@@ -68,8 +68,8 @@
-           utils.USAGE_MODE,
-           utils.USAGE_GUI_MODE,
-           utils.USAGE_INTERACTIVE_MODE,
--          ("Installation for required printer mode:", "--required (Qt4 only)", "option", False),
--          ("Installation for optional printer mode:", "--optional (Qt4 only)", "option", False),
-+          ("Installation for required printer mode:", "--required (Qt5 only)", "option", False),
-+          ("Installation for optional printer mode:", "--optional (Qt5 only)", "option", False),
-           #("Installation generic mode:", "--generic (default)", "option", False),
-           utils.USAGE_LANGUAGE,
-           utils.USAGE_OPTIONS,
-@@ -245,10 +245,10 @@
- 
-     else: # qt4
-         # try:
--        #     from PyQt4.QtGui import QApplication, QMessageBox
-+        #     from PyQt5.QtWidgets import QApplication, QMessageBox
-         #     from ui4.plugindialog import PluginDialog
-         # except ImportError:
--        #     log.error("Unable to load Qt4 support. Is it installed?")
-+        #     log.error("Unable to load Qt5 support. Is it installed?")
-         #     clean_exit(1)
- 
-         QApplication, ui_package = utils.import_dialog(ui_toolkit)
-@@ -256,7 +256,7 @@
-         if ui_toolkit == "qt5":
-             from PyQt5.QtWidgets import QMessageBox
-         elif ui_toolkit == "qt4":
--            from PyQt4.QtGui import QMessageBox
-+            from PyQt5.QtWidgets import QMessageBox
-         app = QApplication(sys.argv)
-         if plugin_installed:
-             if QMessageBox.question(None,
-diff -ruN hplip-3.25.8.orig/pqdiag.py hplip-3.25.8/pqdiag.py
---- hplip-3.25.8.orig/pqdiag.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/pqdiag.py	2026-02-21 01:38:13.307801701 +0100
-@@ -56,14 +56,14 @@
-         sys.exit(1)
-     log.info("Using device : %s\n" % device_uri)
-     if not utils.canEnterGUIMode4():
--        log.error("%s -u/--gui requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s -u/--gui requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
- 
-     try:
--        from PyQt4.QtGui import QApplication
-+        from PyQt5.QtWidgets import QApplication
-         from ui4.pqdiagdialog import PQDiagDialog
-     except ImportError:
--        log.error("Unable to load Qt4 support. Is it installed?")
-+        log.error("Unable to load Qt5 support. Is it installed?")
-         sys.exit(1)
- 
-     app = QApplication(sys.argv)
-diff -ruN hplip-3.25.8.orig/print.py hplip-3.25.8/print.py
---- hplip-3.25.8.orig/print.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/print.py	2026-02-21 01:38:13.307801701 +0100
-@@ -134,10 +134,10 @@
- 
- else: # qt4
-     # try:
--    #     from PyQt4.QtGui import QApplication
-+    #     from PyQt5.QtWidgets import QApplication
-     #     from ui4.printdialog import PrintDialog
-     # except ImportError:
--    #     log.error("Unable to load Qt4 support. Is it installed?")
-+    #     log.error("Unable to load Qt5 support. Is it installed?")
-     #     sys.exit(1)
-     QApplication, ui_package = utils.import_dialog(ui_toolkit)
-     ui = import_module(ui_package + ".printdialog")
-diff -ruN hplip-3.25.8.orig/printsettings.py hplip-3.25.8/printsettings.py
---- hplip-3.25.8.orig/printsettings.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/printsettings.py	2026-02-21 01:38:13.307801701 +0100
-@@ -71,18 +71,18 @@
-         sys.exit(1)
- 
-     if ui_toolkit == 'qt3':
--        log.error("%s requires Qt4 support. Use hp-toolbox to adjust print settings. Exiting." % __mod__)
-+        log.error("%s requires Qt5 support. Use hp-toolbox to adjust print settings. Exiting." % __mod__)
-         sys.exit(1)
- 
-     if not utils.canEnterGUIMode4():
--        log.error("%s requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
- 
-     # try:
--    #     from PyQt4.QtGui import QApplication
-+    #     from PyQt5.QtWidgets import QApplication
-     #     from ui4.printsettingsdialog import PrintSettingsDialog
-     # except ImportError:
--    #     log.error("Unable to load Qt4 support. Is it installed?")
-+    #     log.error("Unable to load Qt5 support. Is it installed?")
-     #     sys.exit(1)
-     QApplication, ui_package = utils.import_dialog(ui_toolkit)
-     ui = import_module(ui_package + ".printsettingsdialog")
-diff -ruN hplip-3.25.8.orig/sendfax.py hplip-3.25.8/sendfax.py
---- hplip-3.25.8.orig/sendfax.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/sendfax.py	2026-02-21 01:38:13.307801701 +0100
-@@ -203,11 +203,11 @@
-     else: # qt4
-         # #try:
-         # if 1:
--        #     from PyQt4.QtGui import QApplication
-+        #     from PyQt5.QtWidgets import QApplication
-         #     from ui4.sendfaxdialog import SendFaxDialog
-         # #except ImportError:
-         # if 0:
--        #     log.error("Unable to load Qt4 support. Is it installed?")
-+        #     log.error("Unable to load Qt5 support. Is it installed?")
-         #     sys.exit(1)
- 
-         QApplication, ui_package = utils.import_dialog(ui_toolkit)
-diff -ruN hplip-3.25.8.orig/setup.py hplip-3.25.8/setup.py
---- hplip-3.25.8.orig/setup.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/setup.py	2026-02-21 01:38:13.307801701 +0100
-@@ -291,9 +291,9 @@
-         cups.releaseCupsInstance()
- 
-     else: # qt4
--        # if utils.ui_status[1] == "PyQt4":
-+        # if utils.ui_status[1] == "PyQt5":
-         #     try:
--        #         from PyQt4.QtGui import QApplication, QMessageBox
-+        #         from PyQt5.QtWidgets import QApplication, QMessageBox
-         #         from ui4.setupdialog import SetupDialog
-         #     except ImportError as e:
-         #         log.error(e)
-diff -ruN hplip-3.25.8.orig/systray.py hplip-3.25.8/systray.py
---- hplip-3.25.8.orig/systray.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/systray.py	2026-02-21 01:38:13.307801701 +0100
-@@ -74,7 +74,7 @@
-     
-     else:
-         if not utils.canEnterGUIMode4():
--            log.error("%s requires Qt4 GUI and DBus support. Exiting." % __mod__)
-+            log.error("%s requires Qt5 GUI and DBus support. Exiting." % __mod__)
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.faxsetup import FaxSetupDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.faxsetup import FaxSetupDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/print.py
++++ b/print.py
+@@ -134,8 +134,8 @@ def main():
              sys.exit(1)
  
-     if not force_startup:
-@@ -110,7 +110,7 @@
-                     import ui5.systemtray as systray
-             except ImportError as e:
-                 log.error(e)
--                log.error("Unable to load Qt4/Qt5 support. Is it installed?")
-+                log.error("Unable to load Qt5/Qt5 support. Is it installed?")
-                 mod.unlockInstance()
-                 sys.exit(1)        
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.printdialog import PrintDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.printdialog import PrintDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/printsettings.py
++++ b/printsettings.py
+@@ -79,8 +79,8 @@ def main():
+             sys.exit(1)
  
-diff -ruN hplip-3.25.8.orig/testpage.py hplip-3.25.8/testpage.py
---- hplip-3.25.8.orig/testpage.py	2026-02-21 01:35:28.951039753 +0100
-+++ hplip-3.25.8/testpage.py	2026-02-21 01:38:13.307801701 +0100
-@@ -66,15 +66,15 @@
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.printsettingsdialog import PrintSettingsDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.printsettingsdialog import PrintSettingsDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/setup.py
++++ b/setup.py
+@@ -293,8 +293,8 @@ def main():
+             sys.exit(1)
  
-     if mode == GUI_MODE:
-         if not utils.canEnterGUIMode4():
--            log.error("%s -u/--gui requires Qt4 GUI support. Entering interactive mode." % __mod__)
-+            log.error("%s -u/--gui requires Qt5 GUI support. Entering interactive mode." % __mod__)
-             mode = INTERACTIVE_MODE
- 
-     if mode == GUI_MODE:
-         # try:
--        #     from PyQt4.QtGui import QApplication
-+        #     from PyQt5.QtWidgets import QApplication
-         #     from ui4.printtestpagedialog import PrintTestPageDialog
-         # except ImportError:
--        #     log.error("Unable to load Qt4 support. Is it installed?")
-+        #     log.error("Unable to load Qt5 support. Is it installed?")
-         #     sys.exit(1)
-         QApplication, ui_package = utils.import_dialog(ui_toolkit)
-         ui = import_module(ui_package + ".printtestpagedialog")
-diff -ruN hplip-3.25.8.orig/toolbox.py hplip-3.25.8/toolbox.py
---- hplip-3.25.8.orig/toolbox.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/toolbox.py	2026-02-21 01:38:13.307801701 +0100
-@@ -247,9 +247,9 @@
+         try:
+-            from PyQt4.QtGui import QApplication, QMessageBox
+-            from ui4.setupdialog import SetupDialog
++            from PyQt5.QtWidgets import QApplication, QMessageBox
++            from ui5.setupdialog import SetupDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/systray.py
++++ b/systray.py
+@@ -52,7 +52,7 @@ def main():
          sys.exit(0)
  
- else: # qt4
--    # if utils.ui_status[1] == "PyQt4":
-+    # if utils.ui_status[1] == "PyQt5":
+     try:
+-        from PyQt4.QtGui import QApplication
++        from PyQt5.QtWidgets import QApplication
+         from base.module import loadModule
+         app = QApplication(sys.argv)
+         mod = loadModule('statusprinter',
+
+--- a/toolbox.py
++++ b/toolbox.py
+@@ -249,8 +249,8 @@ def main():
+     # if utils.ui_status[1] == "PyQt4":
      #     try:
--    #         from PyQt4.QtGui import QApplication
-+    #         from PyQt5.QtWidgets import QApplication
-     #         from ui4.devmgr5 import DevMgr5
-     #     except ImportError as e:
-     #         log.error(e)
-diff -ruN hplip-3.25.8.orig/upgrade.py hplip-3.25.8/upgrade.py
---- hplip-3.25.8.orig/upgrade.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/upgrade.py	2026-02-21 01:38:13.307801701 +0100
-@@ -342,14 +342,14 @@
+     #         from PyQt4.QtGui import QApplication
+-    from PyQt4.QtGui import QApplication
+-    from ui4.toolbox import ToolBox
++    from PyQt5.QtWidgets import QApplication
++    from ui5.toolbox import ToolBox
  
-             else: #qt4
-                 if not utils.canEnterGUIMode4():
--                    log.error("%s requires GUI support . Is Qt4 installed?.. Exiting." % __mod__)
-+                    log.error("%s requires GUI support . Is Qt5 installed?.. Exiting." % __mod__)
-                     clean_exit(1)
+     app = QApplication(sys.argv)
+     form = ToolBox(None, device_uri, scan_device_uri, False, True)
+
+--- a/wificonfig.py
++++ b/wificonfig.py
+@@ -65,8 +65,8 @@ def main():
+     #     try:
+     #         from PyQt4.QtGui import QApplication
+     #         from ui4.wificonfig import WifiConfig
+-    from PyQt4.QtGui import QApplication
+-    from ui4.wificonfig import WifiConfig
++    from PyQt5.QtWidgets import QApplication
++    from ui5.wificonfig import WifiConfig
  
-                 try:
--                    from PyQt4.QtGui import QApplication, QMessageBox
-+                    from PyQt5.QtWidgets import QApplication, QMessageBox
-                     from ui4.upgradedialog import UpgradeDialog
-                 except ImportError:
--                    log.error("Unable to load Qt4 support. Is it installed?")
-+                    log.error("Unable to load Qt5 support. Is it installed?")
-                     clean_exit(1)
+     app = QApplication(sys.argv)
+     form = WifiConfig(None, device_uri, False, True)
+
+--- a/firmware.py
++++ b/firmware.py
+@@ -112,8 +112,8 @@ def main():
+     #     try:
+     #         from PyQt4.QtGui import QApplication
+     #         from ui4.firmwaredialog import FirmwareDialog
+-    from PyQt4.QtGui import QApplication
+-    from ui4.firmwaredialog import FirmwareDialog
++    from PyQt5.QtWidgets import QApplication
++    from ui5.firmwaredialog import FirmwareDialog
  
-                 app = QApplication(sys.argv)
-diff -ruN hplip-3.25.8.orig/wificonfig.py hplip-3.25.8/wificonfig.py
---- hplip-3.25.8.orig/wificonfig.py	2026-02-21 01:35:28.603046610 +0100
-+++ hplip-3.25.8/wificonfig.py	2026-02-21 01:38:13.307801701 +0100
-@@ -61,14 +61,14 @@
+     app = QApplication(sys.argv)
+     form = FirmwareDialog(None, device_uri, False, True)
+
+--- a/align.py
++++ b/align.py
+@@ -235,8 +235,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.alignform import AlignForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.alignform import AlignForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.alignform import AlignForm
  
-     device_uri = None
-     if not utils.canEnterGUIMode4():
--        log.error("%s -u/--gui requires Qt4 GUI support. Exiting." % __mod__)
-+        log.error("%s -u/--gui requires Qt5 GUI support. Exiting." % __mod__)
-         sys.exit(1)
+         app = QApplication(sys.argv)
+         form = AlignForm(None, device_uri, False, True)
+
+--- a/sendfax.py
++++ b/sendfax.py
+@@ -203,8 +203,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.sendfaxform import SendFaxForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.sendfaxform import SendFaxForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.sendfaxform import SendFaxForm
  
-     # try:
--    #     from PyQt4.QtGui import QApplication
-+    #     from PyQt5.QtWidgets import QApplication
-     #     from ui4.wifisetupdialog import WifiSetupDialog
-     # except ImportError:
--    #     log.error("Unable to load Qt4 support. Is it installed?")
-+    #     log.error("Unable to load Qt5 support. Is it installed?")
-     #     sys.exit(1)
+         app = QApplication(sys.argv)
+         form = SendFaxForm(None, device_uri, fax_number, filename, False, True)
+
+--- a/testpage.py
++++ b/testpage.py
+@@ -71,8 +71,8 @@ def main():
+         #     try:
+         #         from PyQt4.QtGui import QApplication
+         #         from ui4.testpageform import TestPageForm
+-        from PyQt4.QtGui import QApplication
+-        from ui4.testpageform import TestPageForm
++        from PyQt5.QtWidgets import QApplication
++        from ui5.testpageform import TestPageForm
  
-     QApplication, ui_package = utils.import_dialog(ui_toolkit)
+         app = QApplication(sys.argv)
+         form = TestPageForm(None, device_uri, False, True)
+
+--- a/devicesettings.py
++++ b/devicesettings.py
+@@ -119,8 +119,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.devicesettings import DeviceSettings
++            from PyQt5.QtWidgets import QApplication
++            from ui5.devicesettings import DeviceSettings
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/hpssd.py
++++ b/hpssd.py
+@@ -104,7 +104,7 @@ def main():
+         sys.exit(0)
+ 
+     try:
+-        from PyQt4.QtGui import QApplication
++        from PyQt5.QtWidgets import QApplication
+         from base.module import loadModule
+         app = QApplication(sys.argv)
+         mod = loadModule('hpssdform',
+
+--- a/config_usb_printer.py
++++ b/config_usb_printer.py
+@@ -113,8 +113,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.configusbdialog import ConfigUsbDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.configusbdialog import ConfigUsbDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/query.py
++++ b/query.py
+@@ -81,8 +81,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.querydialog import QueryDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.querydialog import QueryDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/doctor.py
++++ b/doctor.py
+@@ -126,8 +126,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.doctordialog import DoctorDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.doctordialog import DoctorDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/diagnose_queues.py
++++ b/diagnose_queues.py
+@@ -142,8 +142,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.queuediagnose import QueueDiagnose
++            from PyQt5.QtWidgets import QApplication
++            from ui5.queuediagnose import QueueDiagnose
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/probe.py
++++ b/probe.py
+@@ -78,8 +78,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.probedialog import ProbeDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.probedialog import ProbeDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/info.py
++++ b/info.py
+@@ -71,8 +71,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.infodialog import InfoDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.infodialog import InfoDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/timedate.py
++++ b/timedate.py
+@@ -62,8 +62,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.timedatedialog import TimeDateDialog
++            from PyQt5.QtWidgets import QApplication
++            from ui5.timedatedialog import TimeDateDialog
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/scan.py
++++ b/scan.py
+@@ -137,8 +137,8 @@ def main():
+             sys.exit(1)
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.scanform import ScanForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.scanform import ScanForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)
+
+--- a/pqdiag.py
++++ b/pqdiag.py
+@@ -60,8 +60,8 @@ def main():
+ 
+         try:
+-            from PyQt4.QtGui import QApplication
+-            from ui4.pqdiagform import PqDiagForm
++            from PyQt5.QtWidgets import QApplication
++            from ui5.pqdiagform import PqDiagForm
+         except ImportError:
+             log.error("Unable to load Qt support. Is it installed?")
+             sys.exit(1)

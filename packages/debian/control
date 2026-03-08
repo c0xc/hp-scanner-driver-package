@@ -42,7 +42,7 @@ Depends: ${shlibs:Depends},
          python3 (>= 3.8)
 Recommends: system-config-printer,
             simple-scan
-Conflicts: hplip, hplip-data, python2
+Conflicts: hplip, hplip-data
 Provides: hplip-driver
 Description: HP scanner and printer drivers for modern Linux systems
    HPLIP is an integrated solution for HP inkjet and laser printers,
