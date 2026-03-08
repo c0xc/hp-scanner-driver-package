@@ -1,0 +1,259 @@
+name: Manual Build HPLIP Packages
+
+on:
+  # Manual trigger only
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'HPLIP version to build (default: from VERSION file)'
+        required: false
+        default: ''
+        type: string
+
+      target:
+        description: 'Which target to build (manual runs only)'
+        required: false
+        default: all
+        type: choice
+        options:
+          - all
+          - ubuntu-22.04
+          - ubuntu-20.04
+          - debian-12
+          - fedora-39
+          - opensuse-15.5
+
+      create_release:
+        description: 'Create GitHub release with built packages'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PODMAN_VERSION: '4.9'
+
+jobs:
+  # Determine what to build (manual all or single target)
+  prepare:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      release_suffix: ${{ steps.release_meta.outputs.release_suffix }}
+      release_title_extra: ${{ steps.release_meta.outputs.release_title_extra }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release metadata
+        id: release_meta
+        run: |
+          set -euo pipefail
+          current_month=$(date -u +%Y-%m)
+          current_date=$(date -u +%Y-%m-%d)
+          suffix="manual-${current_date}-${GITHUB_RUN_NUMBER}"
+          title_extra="$current_month manual #${GITHUB_RUN_NUMBER}"
+          echo "release_suffix=$suffix" >> "$GITHUB_OUTPUT"
+          echo "release_title_extra=$title_extra" >> "$GITHUB_OUTPUT"
+
+      - name: Build matrix JSON
+        id: matrix
+        run: |
+          set -euo pipefail
+
+          ALL_DISTROS=(
+            "ubuntu-22.04"
+            "ubuntu-20.04"
+            "debian-12"
+            "fedora-39"
+            "opensuse-15.5"
+          )
+
+          TARGET="${{ github.event.inputs.target }}"
+          if [ -z "$TARGET" ] || [ "$TARGET" = "all" ]; then
+            DISTROS=("${ALL_DISTROS[@]}")
+          else
+            DISTROS=("$TARGET")
+          fi
+
+          if [ "${#DISTROS[@]}" -eq 0 ]; then
+            echo "No distros selected." >&2
+            exit 1
+          fi
+
+          # Build JSON array
+          JSON='['
+          FIRST=true
+          for d in "${DISTROS[@]}"; do
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              JSON+=','
+            fi
+            JSON+="\"$d\""
+          done
+          JSON+=']'
+
+          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+          echo "Building for: $JSON"
+
+  # Build packages for each distribution
+  build:
+    needs: prepare
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: ${{ fromJson(needs.prepare.outputs.matrix) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select OCI engine (prefer podman, fallback docker)
+        run: |
+          set -euo pipefail
+
+          if ! command -v podman >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y podman || true
+          fi
+
+          if command -v podman >/dev/null 2>&1; then
+            OCI_BIN=podman
+            podman --version
+          elif command -v docker >/dev/null 2>&1; then
+            OCI_BIN=docker
+            docker --version
+          else
+            echo "Neither podman nor docker is available on the runner." >&2
+            exit 1
+          fi
+
+          echo "OCI_BIN=$OCI_BIN" >> "$GITHUB_ENV"
+
+      - name: Build container image
+        run: |
+          "$OCI_BIN" build -t hp-scanner-driver-${{ matrix.distro }}-builder \
+            -f Containerfile.${{ matrix.distro }} .
+
+      - name: Prepare output directory
+        run: |
+          mkdir -p output
+
+      - name: Build package
+        run: |
+          "$OCI_BIN" run --rm \
+            -v ${{ github.workspace }}/output:/build/output \
+            hp-scanner-driver-${{ matrix.distro }}-builder \
+            ${{ needs.prepare.outputs.version }}
+
+      - name: List built packages
+        run: |
+          ls -lh output/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.distro }}
+          path: |
+            output/*.deb
+            output/*.rpm
+            output/*.dsc
+            output/*.src.rpm
+            output/*.tar.*
+            output/*.log
+          retention-days: 30
+
+  # Create release only when requested in manual runs
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    if: github.event.inputs.create_release == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Collect all packages
+        run: |
+          mkdir -p release-packages
+          # Release assets:
+          # - Include installable binaries (*.deb/*.rpm) for end users.
+          # - Include source artifacts (*.dsc, *.tar.*, *.src.rpm) for admins/maintainers/compliance.
+          # - Exclude logs.
+          find artifacts/ -type f \
+            \( -name "*.deb" -o -name "*.rpm" \) \
+            -print0 | xargs -0 -I {} cp {} release-packages/
+
+          find artifacts/ -type f \
+            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" \) \
+            -print0 | while IFS= read -r -d '' f; do
+              base="$(basename "$f")"
+              cp "$f" "release-packages/ADMIN-${base}"
+            done
+          ls -lh release-packages/
+
+      - name: Create release notes
+        run: |
+          cat > RELEASE_NOTES.md << ENDNOTES
+          # hp-scanner-driver ${{ needs.prepare.outputs.version }}
+
+          Automated build for multiple Linux distributions.
+
+          ## Installation
+
+          ### Debian/Ubuntu/Mint
+
+            sudo apt install ./hp-scanner-driver_*${{ needs.prepare.outputs.version }}*.deb
+
+          ### Fedora/openSUSE
+
+            sudo dnf install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
+            # or
+            sudo zypper install ./hp-scanner-driver-*${{ needs.prepare.outputs.version }}*.rpm
+
+          ## Important Notes
+
+          ### Proprietary Plugin
+
+          Some HP devices require a proprietary plugin for scanning. If scanning fails with "Error during device I/O", run:
+
+            hp-plugin -i
+
+          ### Python Shebang Fix
+
+          If GUI tools fail with python2 errors, run:
+
+            sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
+
+          ## Documentation
+
+          - See README.md for installation instructions
+          - See TEST.md for test results
+          - See PAIN.md for known issues
+          ENDNOTES
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.prepare.outputs.version }}-${{ needs.prepare.outputs.release_suffix }}
+          name: hp-scanner-driver ${{ needs.prepare.outputs.version }} (${{ needs.prepare.outputs.release_title_extra }})
+          body_path: RELEASE_NOTES.md
+          files: release-packages/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

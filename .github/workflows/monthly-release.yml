@@ -1,109 +1,42 @@
-name: Build HPLIP Packages
+name: Monthly Release HPLIP Packages
 
 on:
-  # Monthly scheduled build (first day of each month at 02:00 UTC)
+  # Monthly scheduled release (first day of each month at 02:00 UTC)
   schedule:
     - cron: '0 2 1 * *'
-
-  # Manual trigger with options
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'HPLIP version to build (default: from VERSION file)'
-        required: false
-        default: ''
-        type: string
-
-      target:
-        description: 'Which target to build (manual runs only)'
-        required: false
-        default: all
-        type: choice
-        options:
-          - all
-          - ubuntu-22.04
-          - ubuntu-20.04
-          - debian-12
-          - fedora-39
-          - opensuse-15.5
-
-      create_release:
-        description: 'Create GitHub release with built packages'
-        required: false
-        default: false
-        type: boolean
 
 env:
   PODMAN_VERSION: '4.9'
 
 jobs:
-  # Determine what to build
   prepare:
     runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       matrix: ${{ steps.matrix.outputs.matrix }}
+      release_month: ${{ steps.release_meta.outputs.release_month }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Get version
         id: version
         run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
-          fi
+          echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
 
-      - name: Build matrix JSON
+      - name: Release metadata
+        id: release_meta
+        run: |
+          # Use UTC to keep tags consistent across runners/timezones.
+          echo "release_month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Build matrix JSON (all distros)
         id: matrix
         run: |
           set -euo pipefail
-
-          ALL_DISTROS=(
-            "ubuntu-22.04"
-            "ubuntu-20.04"
-            "debian-12"
-            "fedora-39"
-            "opensuse-15.5"
-          )
-
-          DISTROS=()
-
-          # Non-workflow_dispatch events (e.g. schedule) have no inputs.
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            DISTROS=("${ALL_DISTROS[@]}")
-          else
-            TARGET="${{ github.event.inputs.target }}"
-            if [ -z "$TARGET" ] || [ "$TARGET" = "all" ]; then
-              DISTROS=("${ALL_DISTROS[@]}")
-            else
-              DISTROS=("$TARGET")
-            fi
-          fi
-
-          if [ "${#DISTROS[@]}" -eq 0 ]; then
-            echo "No distros selected; choose target_set=all/single or enable some custom checkboxes." >&2
-            exit 1
-          fi
-
-          # Build JSON array
-          JSON='['
-          FIRST=true
-          for d in "${DISTROS[@]}"; do
-            if [ "$FIRST" = true ]; then
-              FIRST=false
-            else
-              JSON+=','
-            fi
-            JSON+="\"$d\""
-          done
-          JSON+=']'
-
-          echo "matrix=$JSON" >> $GITHUB_OUTPUT
+          JSON='["ubuntu-22.04","ubuntu-20.04","debian-12","fedora-39","opensuse-15.5"]'
+          echo "matrix=$JSON" >> "$GITHUB_OUTPUT"
           echo "Building for: $JSON"
 
-  # Build packages for each distribution
   build:
     needs: prepare
     runs-on: ubuntu-22.04
@@ -170,11 +103,9 @@ jobs:
             output/*.log
           retention-days: 30
 
-  # Create release if requested
   release:
     needs: [prepare, build]
     runs-on: ubuntu-22.04
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -208,7 +139,7 @@ jobs:
           cat > RELEASE_NOTES.md << ENDNOTES
           # hp-scanner-driver ${{ needs.prepare.outputs.version }}
 
-          Automated build for multiple Linux distributions.
+          Automated monthly build for multiple Linux distributions.
 
           ## Installation
 
@@ -247,8 +178,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.prepare.outputs.version }}
-          name: hp-scanner-driver ${{ needs.prepare.outputs.version }}
+          tag_name: v${{ needs.prepare.outputs.version }}-${{ needs.prepare.outputs.release_month }}
+          name: hp-scanner-driver ${{ needs.prepare.outputs.version }} (${{ needs.prepare.outputs.release_month }})
           body_path: RELEASE_NOTES.md
           files: release-packages/*
           draft: false
