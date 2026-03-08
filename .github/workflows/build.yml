@@ -14,22 +14,13 @@ on:
         default: ''
         type: string
 
-      target_set:
-        description: 'Which targets to build'
+      target:
+        description: 'Which target to build (manual runs only)'
         required: false
         default: all
         type: choice
         options:
           - all
-          - single
-          - custom
-
-      single_distro:
-        description: 'If target_set=single, which distro to build'
-        required: false
-        default: ubuntu-22.04
-        type: choice
-        options:
           - ubuntu-22.04
           - ubuntu-20.04
           - debian-12
@@ -40,36 +31,6 @@ on:
         description: 'Create GitHub release with built packages'
         required: false
         default: false
-        type: boolean
-
-      build_ubuntu_22_04:
-        description: 'Build for Ubuntu 22.04 / Mint 21.x'
-        required: false
-        default: true
-        type: boolean
-
-      build_ubuntu_20_04:
-        description: 'Build for Ubuntu 20.04 / Mint 20.x'
-        required: false
-        default: true
-        type: boolean
-
-      build_debian_12:
-        description: 'Build for Debian 12'
-        required: false
-        default: true
-        type: boolean
-
-      build_fedora_39:
-        description: 'Build for Fedora 39'
-        required: false
-        default: true
-        type: boolean
-
-      build_opensuse_15_5:
-        description: 'Build for openSUSE Leap 15.5'
-        required: false
-        default: true
         type: boolean
 
 env:
@@ -113,26 +74,12 @@ jobs:
           if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             DISTROS=("${ALL_DISTROS[@]}")
           else
-            TARGET_SET="${{ github.event.inputs.target_set }}"
-            case "$TARGET_SET" in
-              all|"")
-                DISTROS=("${ALL_DISTROS[@]}")
-                ;;
-              single)
-                DISTROS=("${{ github.event.inputs.single_distro }}")
-                ;;
-              custom)
-                [ "${{ github.event.inputs.build_ubuntu_22_04 }}" = "true" ] && DISTROS+=("ubuntu-22.04")
-                [ "${{ github.event.inputs.build_ubuntu_20_04 }}" = "true" ] && DISTROS+=("ubuntu-20.04")
-                [ "${{ github.event.inputs.build_debian_12 }}" = "true" ] && DISTROS+=("debian-12")
-                [ "${{ github.event.inputs.build_fedora_39 }}" = "true" ] && DISTROS+=("fedora-39")
-                [ "${{ github.event.inputs.build_opensuse_15_5 }}" = "true" ] && DISTROS+=("opensuse-15.5")
-                ;;
-              *)
-                echo "Unknown target_set: $TARGET_SET" >&2
-                exit 1
-                ;;
-            esac
+            TARGET="${{ github.event.inputs.target }}"
+            if [ -z "$TARGET" ] || [ "$TARGET" = "all" ]; then
+              DISTROS=("${ALL_DISTROS[@]}")
+            else
+              DISTROS=("$TARGET")
+            fi
           fi
 
           if [ "${#DISTROS[@]}" -eq 0 ]; then
@@ -223,7 +170,7 @@ jobs:
   release:
     needs: [prepare, build]
     runs-on: ubuntu-22.04
-    if: github.event.inputs.create_release == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
 
     steps:
       - uses: actions/checkout@v4
