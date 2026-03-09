@@ -35,6 +35,7 @@ Architecture: any
 Depends: ${shlibs:Depends},
          ${python3:Depends},
          ${misc:Depends},
+         libc6,
          cups-client,
          cups-daemon,
          sane-utils,
@@ -45,20 +46,20 @@ Recommends: system-config-printer,
 Conflicts: hplip, hplip-data
 Provides: hplip-driver
 Description: HP scanner and printer drivers for modern Linux systems
-   HPLIP is an integrated solution for HP inkjet and laser printers,
-   all-in-one devices, and scanners.
-   .
-   This package provides pre-built HP drivers with fixes for modern
-   Linux distributions. Unlike the official HP installer, this package
-   installs cleanly via apt and can be removed cleanly.
-   .
-   Features:
-    - Printer drivers for HP inkjet and laser printers
-    - Scanner drivers for HP all-in-one devices
-    - HP Toolbox GUI for device management
-    - hp-setup wizard for easy printer setup
-    - hp-check diagnostics tool
-   .
-   This package is maintained independently and is not affiliated with
-   or endorsed by HP Development Company, L.P. HPLIP is a trademark
-   of HP Development Company, L.P.
+ HPLIP is an integrated solution for HP inkjet and laser printers,
+ all-in-one devices, and scanners.
+ .
+ This package provides pre-built HP drivers with fixes for modern
+ Linux distributions. Unlike the official HP installer, this package
+ installs cleanly via apt and can be removed cleanly.
+ .
+ Features:
+  * Printer drivers for HP inkjet and laser printers
+  * Scanner drivers for HP all-in-one devices
+  * HP Toolbox GUI for device management
+  * hp-setup wizard for easy printer setup
+  * hp-check diagnostics tool
+ .
+ This package is maintained independently and is not affiliated with
+ or endorsed by HP Development Company, L.P. HPLIP is a trademark
+ of HP Development Company, L.P.

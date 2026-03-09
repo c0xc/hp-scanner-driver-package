@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 OUTPUT_DIR="$PARENT_DIR/output"
 WORKDIR="/tmp/hplip-build-$$"
+TARBALL="hplip-${VERSION}.tar.gz"
 
 # Extract distro version for package naming
 # e.g., ubuntu-22.04 -> 22.04, debian-12 -> 12
@@ -30,12 +31,11 @@ mkdir -p "$WORKDIR"
 
 cd "$WORKDIR"
 
-# Download source
-echo "Downloading HPLIP $VERSION source..."
-wget -q "https://sourceforge.net/projects/hplip/files/hplip/${VERSION}/hplip-${VERSION}.tar.gz"
+# Download + verify upstream source (shared helper used by both DEB/RPM flows).
+bash "$SCRIPT_DIR/prepare-upstream-source.sh" "$VERSION" "$DISTRO" "$WORKDIR" "$OUTPUT_DIR"
 
 # Create expected .orig.tar.gz name for debuild
-mv hplip-${VERSION}.tar.gz hp-scanner-driver_${VERSION}.orig.tar.gz
+mv "$TARBALL" hp-scanner-driver_${VERSION}.orig.tar.gz
 tar xzf hp-scanner-driver_${VERSION}.orig.tar.gz
 cd hplip-${VERSION}
 

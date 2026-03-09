@@ -100,6 +100,10 @@ jobs:
             output/*.dsc
             output/*.src.rpm
             output/*.tar.*
+            output/*.asc
+            output/*.sha256
+            output/*.md5
+            output/upstream-provenance-*.txt
             output/*.log
           retention-days: 30
 
@@ -120,14 +124,14 @@ jobs:
           mkdir -p release-packages
           # Release assets:
           # - Include installable binaries (*.deb/*.rpm) for end users.
-          # - Include source artifacts (*.dsc, *.tar.*, *.src.rpm) for admins/maintainers/compliance.
+          # - Include source and integrity artifacts (*.dsc, *.tar.*, *.src.rpm, *.asc, checksums) for admins/maintainers/compliance.
           # - Exclude logs.
           find artifacts/ -type f \
             \( -name "*.deb" -o -name "*.rpm" \) \
             -print0 | xargs -0 -I {} cp {} release-packages/
 
           find artifacts/ -type f \
-            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" \) \
+            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" -o -name "*.asc" -o -name "*.sha256" -o -name "*.md5" -o -name "upstream-provenance-*.txt" \) \
             -print0 | while IFS= read -r -d '' f; do
               base="$(basename "$f")"
               cp "$f" "release-packages/ADMIN-${base}"

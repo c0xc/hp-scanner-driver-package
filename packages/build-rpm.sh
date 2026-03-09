@@ -13,6 +13,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PARENT_DIR="$(dirname "$SCRIPT_DIR")"
 OUTPUT_DIR="$PARENT_DIR/output"
 WORKDIR="/tmp/hplip-build-$$"
+TARBALL="hplip-${VERSION}.tar.gz"
 
 # Extract distro info for package naming
 # e.g., fedora-39 -> fc39, opensuse-15.5 -> lp155
@@ -39,28 +40,50 @@ echo "Work dir: $WORKDIR"
 trap "rm -rf $WORKDIR" EXIT
 
 mkdir -p "$OUTPUT_DIR"
-mkdir -p ~/rpmbuild/SOURCES
-mkdir -p ~/rpmbuild/SPECS
-mkdir -p ~/rpmbuild/BUILD
-mkdir -p ~/rpmbuild/RPMS
-mkdir -p ~/rpmbuild/SRPMS
+
+# Set up RPM build directories based on distribution
+if [ "$PKG_MANAGER" = "dnf" ]; then
+    # Fedora uses ~/rpmbuild
+    mkdir -p ~/rpmbuild/SOURCES
+    mkdir -p ~/rpmbuild/SPECS
+    mkdir -p ~/rpmbuild/BUILD
+    mkdir -p ~/rpmbuild/RPMS
+    mkdir -p ~/rpmbuild/SRPMS
+    RPM_TOP="$HOME/rpmbuild"
+elif [ "$PKG_MANAGER" = "zypper" ]; then
+    # openSUSE uses /usr/src/packages
+    RPM_TOP="/usr/src/packages"
+    mkdir -p "$RPM_TOP"/{SOURCES,SPECS,BUILD,RPMS,SRPMS}
+else
+    RPM_TOP="$HOME/rpmbuild"
+    mkdir -p ~/rpmbuild/SOURCES
+    mkdir -p ~/rpmbuild/SPECS
+    mkdir -p ~/rpmbuild/BUILD
+    mkdir -p ~/rpmbuild/RPMS
+    mkdir -p ~/rpmbuild/SRPMS
+fi
+
 mkdir -p "$WORKDIR"
 
 cd "$WORKDIR"
 
-# Download source
-echo "Downloading HPLIP $VERSION source..."
-wget -q "https://sourceforge.net/projects/hplip/files/hplip/${VERSION}/hplip-${VERSION}.tar.gz"
-cp hplip-${VERSION}.tar.gz ~/rpmbuild/SOURCES/
+# Download + verify upstream source (shared helper used by both DEB/RPM flows).
+bash "$SCRIPT_DIR/prepare-upstream-source.sh" "$VERSION" "$DISTRO" "$WORKDIR" "$OUTPUT_DIR"
 
-# Copy and update spec file
-cp "$SCRIPT_DIR/rpm/hp-scanner-driver.spec" ~/rpmbuild/SPECS/
-sed -i "s/Version:        3.25.8/Version:        ${VERSION}/g" ~/rpmbuild/SPECS/hp-scanner-driver.spec
+cp "$TARBALL" "$RPM_TOP/SOURCES/"
+
+# Copy and update spec file (use distro-specific spec if available)
+if [ -f "$SCRIPT_DIR/rpm/hp-scanner-driver.spec.${DISTRO%%-*}" ]; then
+    cp "$SCRIPT_DIR/rpm/hp-scanner-driver.spec.${DISTRO%%-*}" "$RPM_TOP/SPECS/hp-scanner-driver.spec"
+else
+    cp "$SCRIPT_DIR/rpm/hp-scanner-driver.spec" "$RPM_TOP/SPECS/"
+fi
+sed -i "s/Version:        3.25.8/Version:        ${VERSION}/g" "$RPM_TOP/SPECS/hp-scanner-driver.spec"
 
 # Prepare source with patches
 echo "Preparing source with patches..."
-cd ~/rpmbuild/SOURCES
-tar xzf hplip-${VERSION}.tar.gz
+cd "$RPM_TOP/SOURCES"
+tar xzf "$TARBALL"
 cd hplip-${VERSION}
 
 # Create required files for automake
@@ -75,20 +98,20 @@ tar czf hplip-${VERSION}-patched.tar.gz hplip-${VERSION}/
 rm -rf hplip-${VERSION}
 
 # Update spec to use patched source
-sed -i "s|hplip-%{version}.tar.gz|hplip-%{version}-patched.tar.gz|g" ~/rpmbuild/SPECS/hp-scanner-driver.spec
+sed -i "s|hplip-%{version}.tar.gz|hplip-%{version}-patched.tar.gz|g" "$RPM_TOP/SPECS/hp-scanner-driver.spec"
 
 # Update Release field with distro suffix
-sed -i "s/Release:        1%{?dist}/Release:        1~${DISTRO_SUFFIX}%{?dist}/g" ~/rpmbuild/SPECS/hp-scanner-driver.spec
+sed -i "s/Release:        1%{?dist}/Release:        1~${DISTRO_SUFFIX}%{?dist}/g" "$RPM_TOP/SPECS/hp-scanner-driver.spec"
 
 # Build RPM
 echo "Building .rpm package..."
-cd ~/rpmbuild/SPECS
+cd "$RPM_TOP/SPECS"
 rpmbuild -ba hp-scanner-driver.spec
 
 # Copy output
 echo "Copying packages to $OUTPUT_DIR..."
-cp ~/rpmbuild/RPMS/*/*.rpm "$OUTPUT_DIR/"
-cp ~/rpmbuild/SRPMS/*.src.rpm "$OUTPUT_DIR/" 2>/dev/null || true
+cp "$RPM_TOP/RPMS"/*/*.rpm "$OUTPUT_DIR/"
+cp "$RPM_TOP/SRPMS"/*.src.rpm "$OUTPUT_DIR/" 2>/dev/null || true
 
 echo "=== Build Complete ==="
 ls -lh "$OUTPUT_DIR"/*.rpm

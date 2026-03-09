@@ -9,7 +9,8 @@ RUN dnf install -y \
     gcc gcc-c++ make autoconf automake libtool pkg-config \
     cups-devel libusb1-devel sane-backends-devel libjpeg-devel \
     dbus-devel avahi-devel net-snmp-devel python3-devel python3-qt5 \
-    rpm-build rpmdevtools wget patch \
+    rpm-build rpmdevtools curl bind-utils perl iproute net-tools nmap-ncat \
+    ca-certificates unzip xz bzip2 gzip file wget patch gnupg2 \
     && dnf clean all
 
 WORKDIR /build

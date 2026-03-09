@@ -10,8 +10,9 @@ FROM opensuse/leap:15.5
 RUN zypper install -y \
     gcc gcc-c++ make autoconf automake libtool pkg-config \
     cups-devel libusb-1_0-devel sane-backends-devel libjpeg-devel \
-    dbus-1-devel libavahi-devel net-snmp-devel python3-devel python3-PyQt5 \
-    rpm-build wget patch \
+    dbus-1-devel libavahi-devel net-snmp-devel python3-devel python3-PyQt5-sip \
+    rpm-build curl bind-utils perl iproute2 netcat-openbsd \
+    ca-certificates unzip xz gzip bzip2 file wget patch gpg2 \
     && zypper clean
 
 WORKDIR /build
