@@ -144,10 +144,8 @@ apt-get update -qq
 apt-get install -y -qq cups-client cups-daemon python3 2>&1 | tee -a "$OUTPUT_DIR/install-dependencies-${DISTRO}.log" || true
 
 # Install the package, capturing stdout and stderr to separate files
-# Note: Using --force-depends because HPLIP falsely detects python2 dependency
-# The package works fine with python3 only - this is a known HPLIP quirk
-echo "Installing with --force-depends (python2 is false positive)..."
-dpkg -i --force-depends "$DEB_FILE" > "$OUTPUT_DIR/install-stdout-${DISTRO}.log" 2> "$OUTPUT_DIR/install-stderr-${DISTRO}.log" || {
+echo "Installing package..."
+dpkg -i "$DEB_FILE" > "$OUTPUT_DIR/install-stdout-${DISTRO}.log" 2> "$OUTPUT_DIR/install-stderr-${DISTRO}.log" || {
     EXIT_CODE=$?
     echo "dpkg install failed with exit code $EXIT_CODE"
     echo "See: $OUTPUT_DIR/install-stdout-${DISTRO}.log"

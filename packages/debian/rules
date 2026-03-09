@@ -53,6 +53,9 @@ override_dh_auto_install:
 	# Remove dll.conf and dll.d - we manage them in postinst/prerm
 	rm -f $(CURDIR)/debian/hp-scanner-driver/etc/sane.d/dll.conf
 	rm -rf $(CURDIR)/debian/hp-scanner-driver/etc/sane.d/dll.d
+	# Normalize Python shebangs before dh_python3 scans dependencies.
+	find $(CURDIR)/debian/hp-scanner-driver -type f \( -name "*.py" -o -path "$(CURDIR)/debian/hp-scanner-driver/usr/lib/cups/filter/pstotiff" \) \
+		-exec sed -i 's|^#!/usr/bin/env python$$|#!/usr/bin/python3|; s|^#!/usr/bin/python$$|#!/usr/bin/python3|; s|^#!/usr/bin/python2$$|#!/usr/bin/python3|' {} \;
 
 override_dh_strip:
 	dh_strip --dbgsym-migration='hp-scanner-driver-dbgsym (<< 3.25.8)'

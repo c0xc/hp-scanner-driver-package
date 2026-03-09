@@ -401,9 +401,9 @@ When you come back to this in 6 months and wonder why anything is broken:
  - **Fix:** Manually patch the function to only try PyQt5
 
 2. **Shebang issues**
- - Installed scripts have `#!/usr/bin/python2` hardcoded
- - Container has no python2, only python3
- - **Fix:** `sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py`
+ - Upstream ships Python shebangs that confuse Debian dependency detection
+ - This caused a false `python2:any` dependency in the generated package
+ - **Status:** Fixed in `debian/rules` by normalizing shebangs before `dh_python3`
 
 ### Why This Happens
 
@@ -426,9 +426,6 @@ HPLIP's codebase is 20+ years old with:
 # Check which script is failing
 head -1 /usr/share/hplip/*.py | grep python2
 
-# Fix all shebangs at once
-sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
-
 # Check for syntax errors
 python3 -m py_compile /usr/share/hplip/base/utils.py
 
@@ -436,13 +433,13 @@ python3 -m py_compile /usr/share/hplip/base/utils.py
 python3 -u /usr/share/hplip/setup.py
 ```
 
-### Long-Term Fix Needed
+### Fix Status
 
-Create a proper `03-python-syntax-fixes.patch` that:
-1. Fixes all shebangs to `#!/usr/bin/env python3`
-2. Fixes `checkPyQtImport4()` function properly
-3. Runs `python3 -m py_compile` on all `.py` files during build
-4. Fails the build if any syntax errors are found
+Shebang issue: Fixed in debian/rules and RPM spec (automatic correction during build)
+
+Still needed:
+- Proper patch for `checkPyQtImport4()` function
+- Build-time syntax validation (`python3 -m py_compile`)
 
 ---
 

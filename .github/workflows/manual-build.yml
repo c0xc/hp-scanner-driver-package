@@ -238,12 +238,6 @@ jobs:
 
             hp-plugin -i
 
-          ### Python Shebang Fix
-
-          If GUI tools fail with python2 errors, run:
-
-            sudo sed -i '1s|.*|#!/usr/bin/python3|' /usr/share/hplip/*.py
-
           ## Documentation
 
           - See README.md for installation instructions
