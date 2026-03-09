@@ -1,7 +1,14 @@
 # Build output directories
 output/
 packages/debian/source/
-packages/rpm/
+
+# RPM build artifacts (but keep source .spec files)
+packages/rpm/*
+!packages/rpm/*.spec
+!packages/rpm/*.spec.*
+!packages/rpm/SOURCES/
+packages/rpm/SOURCES/*
+!packages/rpm/SOURCES/.gitkeep
 
 # Generated files
 *.log
