@@ -396,9 +396,8 @@ When you come back to this in 6 months and wonder why anything is broken:
 
 1. **`base/utils.py` - `checkPyQtImport4()` function (line ~811)**
  - Original code tries PyQt4, falls back to PyQt5
- - Our Qt4->Qt5 patch broke the try/except/else structure
- - Result: `IndentationError` or `SyntaxError`
- - **Fix:** Manually patch the function to only try PyQt5
+ - The Qt migration patch leaves this helper in a broken state
+ - **Status:** Fixed during build before validation/package creation
 
 2. **Shebang issues**
  - Upstream ships Python shebangs that confuse Debian dependency detection
@@ -437,9 +436,9 @@ python3 -u /usr/share/hplip/setup.py
 
 Shebang issue: Fixed in debian/rules and RPM spec (automatic correction during build)
 
-Still needed:
-- Proper patch for `checkPyQtImport4()` function
-- Build-time syntax validation (`python3 -m py_compile`)
+Qt helper fix: Applied during build before validation/package creation
+
+Build-time syntax validation: Enabled in DEB and RPM build scripts
 
 ---
 

@@ -44,17 +44,9 @@ if [ -f "$PATCHES_DIR/series" ]; then
     while IFS= read -r patch || [ -n "$patch" ]; do
         [ -z "$patch" ] && continue
         [[ "$patch" =~ ^# ]] && continue
-        
-        # Check if patch is version-specific
-        if [[ "$patch" =~ -([0-9]+\.[0-9]+\.[0-9]+)\.patch$ ]]; then
-            patch_version="${BASH_REMATCH[1]}"
-            # Skip patch if version doesn't match
-            if [ -n "$VERSION" ] && [ "$VERSION" != "$patch_version" ]; then
-                echo "  Skipping: $patch (for HPLIP $patch_version, building $VERSION)"
-                continue
-            fi
-        fi
-        
+
+        # The series file is authoritative and may intentionally pin a
+        # versioned patch to a nearby upstream release when it still applies.
         if [ -f "$PATCHES_DIR/$patch" ]; then
             echo "  Applying: $patch"
             patch -p1 < "$PATCHES_DIR/$patch"

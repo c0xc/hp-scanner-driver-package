@@ -127,6 +127,39 @@ touch AUTHORS ChangeLog NEWS README
 # Apply patches
 bash "$SCRIPT_DIR/apply-patches.sh" "$(pwd)" "$SCRIPT_DIR/patches"
 
+# Repair the broken Qt migration hunk in base/utils.py before validation.
+python3 - <<'PY'
+from pathlib import Path
+
+path = Path("base/utils.py")
+text = path.read_text()
+old = '''def checkPyQtImport4():
+        import ui5
+    else:
+        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
+'''
+new = '''def checkPyQtImport4():
+    try:
+        import PyQt5
+        import ui5
+        return True
+    except ImportError as e:
+        log.debug(e)
+        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
+        return False
+'''
+if old not in text:
+    raise SystemExit("Failed to locate broken checkPyQtImport4() block")
+path.write_text(text.replace(old, new, 1))
+PY
+
+# Validate patched Python sources before packaging.
+# Exclude legacy ui4 sources because this package is built with Qt4 disabled.
+echo "Validating Python syntax..."
+find . -path "./ui4" -prune -o -type f -name "*.py" -print0 | xargs -0 -r python3 -m py_compile
+find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+find . -type f -name "*.py[co]" -delete
+
 # Repack source
 cd ..
 tar czf hplip-${VERSION}-patched.tar.gz hplip-${VERSION}/

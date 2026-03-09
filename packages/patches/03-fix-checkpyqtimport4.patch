@@ -1,0 +1,20 @@
+--- a/base/utils.py
++++ b/base/utils.py
+@@ -809,5 +809,10 @@
+ 
+ 
+ def checkPyQtImport4():
+-        import ui5
+-    else:
+-        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
++    try:
++        import PyQt5
++        import ui5
++        return True
++    except ImportError as e:
++        log.debug(e)
++        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
++        return False
+ 
+ 
+ def checkPyQtImport45():
