@@ -1,0 +1,25 @@
+# Containerfile for building hp-scanner-driver (Rocky Linux 9)
+# Maintainer: c0xc
+# Build: podman build -t hp-scanner-driver-rocky-9-builder -f Containerfile.rocky-9 .
+# Run:   podman run --rm -v ./output:/build/output hp-scanner-driver-rocky-9-builder [VERSION|latest]
+#
+# Target: Rocky Linux 9 (RHEL 9 clone, supported until 2032)
+# Also compatible with: AlmaLinux 9, Oracle Linux 9
+
+FROM rockylinux:9
+
+RUN dnf install -y --allowerasing \
+    gcc gcc-c++ make autoconf automake libtool pkg-config \
+    cups-devel libusb1-devel sane-backends-devel libjpeg-devel \
+    dbus-devel net-snmp-devel python3-devel python3-qt5 \
+    rpm-build rpmdevtools curl bind-utils perl iproute net-tools nmap-ncat \
+    ca-certificates unzip xz bzip2 gzip file wget patch gnupg2 \
+    && dnf clean all
+
+WORKDIR /build
+COPY packages/ /build/packages/
+COPY VERSION /build/VERSION
+
+RUN printf '#!/bin/bash\nVERSION=${1:-latest}\nif [ "$VERSION" = "latest" ]; then\n    VERSION=$(cat /build/VERSION)\nfi\ncd /build/packages\n./build-rpm.sh $VERSION rocky-9\n' > /build/build.sh && chmod +x /build/build.sh
+
+ENTRYPOINT ["/build/build.sh"]

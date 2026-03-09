@@ -3,13 +3,16 @@
 # Usage: ./build.sh [distro] [VERSION]
 #
 # Distros:
+#   debian-11       - Debian 11 (Bullseye)
 #   debian-12       - Debian 12 (Bookworm)
 #   ubuntu-20.04    - Ubuntu 20.04 LTS / Mint 20.x
 #   ubuntu-22.04    - Ubuntu 22.04 LTS / Mint 21.x
 #   fedora-39       - Fedora 39
+#   fedora-40       - Fedora 40
 #   opensuse-15.5   - openSUSE Leap 15.5
-#   all-deb         - Build all DEB variants (debian-12, ubuntu-20.04, ubuntu-22.04)
-#   all-rpm         - Build all RPM variants (fedora-39, opensuse-15.5)
+#   rocky-9         - Rocky Linux 9 / AlmaLinux 9 (RHEL 9)
+#   all-deb         - Build all DEB variants
+#   all-rpm         - Build all RPM variants
 #   all             - Build all variants (default)
 #   clean           - Remove build artifacts
 
@@ -66,11 +69,14 @@ clean() {
     rm -f output/*.deb output/*.rpm output/*.log output/*.dsc output/*.tar.xz output/*.src.rpm
     rm -rf output/hplip-*/
     # Remove old container images
+    "$OCI_BIN" rmi hp-scanner-driver-debian-11-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-debian-12-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-ubuntu-20.04-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-ubuntu-22.04-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-fedora-39-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-fedora-40-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-opensuse-15.5-builder 2>/dev/null || true
+    "$OCI_BIN" rmi hp-scanner-driver-rocky-9-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-deb-builder 2>/dev/null || true
     "$OCI_BIN" rmi hp-scanner-driver-rpm-builder 2>/dev/null || true
     echo "=== Clean complete ==="
@@ -79,12 +85,15 @@ clean() {
 list_distros() {
     echo "Available distros:"
     echo "  DEB:"
+    echo "    debian-11       - Debian 11 (Bullseye)"
     echo "    debian-12       - Debian 12 (Bookworm)"
     echo "    ubuntu-20.04    - Ubuntu 20.04 LTS / Mint 20.x"
     echo "    ubuntu-22.04    - Ubuntu 22.04 LTS / Mint 21.x"
     echo "  RPM:"
     echo "    fedora-39       - Fedora 39"
+    echo "    fedora-40       - Fedora 40"
     echo "    opensuse-15.5   - openSUSE Leap 15.5"
+    echo "    rocky-9         - Rocky Linux 9 / AlmaLinux 9 (RHEL 9)"
     echo "  Shortcuts:"
     echo "    all-deb         - Build all DEB variants"
     echo "    all-rpm         - Build all RPM variants"
@@ -93,6 +102,9 @@ list_distros() {
 }
 
 case "$DISTRO" in
+    debian-11)
+        build_deb "debian-11" "$VERSION"
+        ;;
     debian-12)
         build_deb "debian-12" "$VERSION"
         ;;
@@ -105,25 +117,37 @@ case "$DISTRO" in
     fedora-39)
         build_rpm "fedora-39" "$VERSION"
         ;;
+    fedora-40)
+        build_rpm "fedora-40" "$VERSION"
+        ;;
     opensuse-15.5)
         build_rpm "opensuse-15.5" "$VERSION"
         ;;
+    rocky-9)
+        build_rpm "rocky-9" "$VERSION"
+        ;;
     all-deb)
+        build_deb "debian-11" "$VERSION"
         build_deb "debian-12" "$VERSION"
         build_deb "ubuntu-20.04" "$VERSION"
         build_deb "ubuntu-22.04" "$VERSION"
         ;;
     all-rpm)
         build_rpm "fedora-39" "$VERSION"
+        build_rpm "fedora-40" "$VERSION"
         build_rpm "opensuse-15.5" "$VERSION"
+        build_rpm "rocky-9" "$VERSION"
         ;;
     all)
+        build_deb "debian-11" "$VERSION"
         build_deb "debian-12" "$VERSION"
         build_deb "ubuntu-20.04" "$VERSION"
         build_deb "ubuntu-22.04" "$VERSION"
         build_rpm "fedora-39" "$VERSION"
+        build_rpm "fedora-40" "$VERSION"
         build_rpm "opensuse-15.5" "$VERSION"
-        ;;
+        build_rpm "rocky-9" "$VERSION"
+        ;;  
     clean)
         clean
         ;;

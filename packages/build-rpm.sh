@@ -27,6 +27,11 @@ elif [[ "$DISTRO" == opensuse-* ]]; then
     OPENSUSE_SHORT=$(echo "$OPENSUSE_VER" | tr -d '.')
     DISTRO_SUFFIX="lp${OPENSUSE_SHORT}"
     PKG_MANAGER="zypper"
+elif [[ "$DISTRO" == rocky-* ]]; then
+    # Rocky/Alma use el9 format
+    ROCKY_VER="${DISTRO#rocky-}"
+    DISTRO_SUFFIX="el${ROCKY_VER%%.*}"
+    PKG_MANAGER="dnf"
 else
     DISTRO_SUFFIX="$DISTRO"
     PKG_MANAGER="unknown"
@@ -163,11 +168,15 @@ echo "Installing dependencies..."
 if [ "$PKG_MANAGER" = "dnf" ]; then
     dnf install -y -q sane-backends-libs cups cups-libs 2>&1 | tee -a "$OUTPUT_DIR/install-dependencies-${DISTRO}.log" || true
 elif [ "$PKG_MANAGER" = "zypper" ]; then
-    zypper install -y -q sane-backends-libs cups cups-libs 2>&1 | tee -a "$OUTPUT_DIR/install-dependencies-${DISTRO}.log" || true
+    # openSUSE zypper uses different flags than dnf
+    # Note: libsane2 is called sane-backends on openSUSE
+    zypper install -y --no-recommends cups cups-client sane-backends 2>&1 | tee -a "$OUTPUT_DIR/install-dependencies-${DISTRO}.log" || true
 fi
 
 # Install the package, capturing stdout and stderr to separate files
-rpm -ivh "$RPM_FILE" > "$OUTPUT_DIR/install-stdout-${DISTRO}.log" 2> "$OUTPUT_DIR/install-stderr-${DISTRO}.log" || {
+# Use --force to ignore missing proprietary plugin (libImageProcessor)
+# This is expected - users need to run hp-plugin -i for some devices
+rpm -ivh --force --nodeps "$RPM_FILE" > "$OUTPUT_DIR/install-stdout-${DISTRO}.log" 2> "$OUTPUT_DIR/install-stderr-${DISTRO}.log" || {
     EXIT_CODE=$?
     echo "rpm install failed with exit code $EXIT_CODE"
     echo "See: $OUTPUT_DIR/install-stdout-${DISTRO}.log"

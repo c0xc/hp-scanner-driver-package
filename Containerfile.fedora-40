@@ -1,0 +1,24 @@
+# Containerfile for building hp-scanner-driver (Fedora 40)
+# Maintainer: c0xc
+# Build: podman build -t hp-scanner-driver-fedora-40-builder -f Containerfile.fedora-40 .
+# Run:   podman run --rm -v ./output:/build/output hp-scanner-driver-fedora-40-builder [VERSION|latest]
+#
+# Target: Fedora 40 (released April 2024)
+
+FROM fedora:40
+
+RUN dnf install -y \
+    gcc gcc-c++ make autoconf automake libtool pkg-config \
+    cups-devel libusb1-devel sane-backends-devel libjpeg-devel \
+    dbus-devel avahi-devel net-snmp-devel python3-devel python3-qt5 \
+    rpm-build rpmdevtools curl bind-utils perl iproute net-tools nmap-ncat \
+    ca-certificates unzip xz bzip2 gzip file wget patch gnupg2 \
+    && dnf clean all
+
+WORKDIR /build
+COPY packages/ /build/packages/
+COPY VERSION /build/VERSION
+
+RUN printf '#!/bin/bash\nVERSION=${1:-latest}\nif [ "$VERSION" = "latest" ]; then\n    VERSION=$(cat /build/VERSION)\nfi\ncd /build/packages\n./build-rpm.sh $VERSION fedora-40\n' > /build/build.sh && chmod +x /build/build.sh
+
+ENTRYPOINT ["/build/build.sh"]
