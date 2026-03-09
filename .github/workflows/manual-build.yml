@@ -122,8 +122,8 @@ jobs:
           set -euo pipefail
 
           if ! command -v podman >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y podman || true
+            sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y podman || true
           fi
 
           if command -v podman >/dev/null 2>&1; then
@@ -151,6 +151,7 @@ jobs:
       - name: Build package
         run: |
           "$OCI_BIN" run --rm \
+            -e DEBIAN_FRONTEND=noninteractive -e TZ=Etc/UTC \
             -v ${{ github.workspace }}/output:/build/output \
             hp-scanner-driver-${{ matrix.distro }}-builder \
             ${{ needs.prepare.outputs.version }}

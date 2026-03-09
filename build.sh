@@ -42,7 +42,10 @@ build_deb() {
     local version="$2"
     echo "=== Building DEB package for $distro ==="
     "$OCI_BIN" build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
-    "$OCI_BIN" run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
+    "$OCI_BIN" run --rm \
+        -e DEBIAN_FRONTEND=noninteractive -e TZ=Etc/UTC \
+        -v ./output:/build/output \
+        hp-scanner-driver-${distro}-builder "$version"
     echo "=== DEB build complete for $distro ==="
 }
 
@@ -51,7 +54,10 @@ build_rpm() {
     local version="$2"
     echo "=== Building RPM package for $distro ==="
     "$OCI_BIN" build -t hp-scanner-driver-${distro}-builder -f Containerfile.${distro} .
-    "$OCI_BIN" run --rm -v ./output:/build/output hp-scanner-driver-${distro}-builder "$version"
+    "$OCI_BIN" run --rm \
+        -e DEBIAN_FRONTEND=noninteractive -e TZ=Etc/UTC \
+        -v ./output:/build/output \
+        hp-scanner-driver-${distro}-builder "$version"
     echo "=== RPM build complete for $distro ==="
 }
 

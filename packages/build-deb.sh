@@ -15,6 +15,10 @@ OUTPUT_DIR="$PARENT_DIR/output"
 WORKDIR="/tmp/hplip-build-$$"
 TARBALL="hplip-${VERSION}.tar.gz"
 
+# Avoid debconf prompts (e.g. tzdata) in CI/container builds.
+export DEBIAN_FRONTEND=noninteractive
+export TZ=Etc/UTC
+
 # Extract distro version for package naming
 # e.g., ubuntu-22.04 -> 22.04, debian-12 -> 12
 DISTRO_VERSION=$(echo "$DISTRO" | sed 's/^[^-]*-//')
@@ -106,7 +110,7 @@ EOF
 # Install build dependencies
 echo "Installing build dependencies..."
 apt-get update
-apt-get build-dep -y .
+apt-get build-dep -y -q .
 
 # Build package
 echo "Building .deb package..."
