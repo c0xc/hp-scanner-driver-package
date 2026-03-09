@@ -29,6 +29,37 @@ trap "rm -rf $WORKDIR" EXIT
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "$WORKDIR"
 
+write_md5sums_manifest() {
+    local manifest
+    manifest="$OUTPUT_DIR/md5sums-${DISTRO}-${VERSION}.md5"
+
+    (
+        set -e
+        cd "$OUTPUT_DIR"
+
+        # Only include the upstream tarball/signature and the built package artifacts.
+        # Exclude logs and checksum/provenance files to keep this user-focused.
+        {
+            if [ -f "$TARBALL" ]; then
+                printf '%s\n' "$TARBALL"
+            fi
+            if [ -f "${TARBALL}.asc" ]; then
+                printf '%s\n' "${TARBALL}.asc"
+            fi
+
+            ls -1 hp-scanner-driver_*"${VERSION}"*.deb 2>/dev/null || true
+            ls -1 *.dsc 2>/dev/null || true
+            ls -1 *.tar.* 2>/dev/null || true
+        } | LC_ALL=C sort -u | while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            [ -f "$f" ] || continue
+            md5sum "$f"
+        done > "$manifest"
+    )
+
+    echo "Wrote md5sums manifest: $manifest"
+}
+
 cd "$WORKDIR"
 
 # Download + verify upstream source (shared helper used by both DEB/RPM flows).
@@ -87,6 +118,8 @@ cd ..
 cp *.deb "$OUTPUT_DIR/"
 cp *.dsc "$OUTPUT_DIR/" 2>/dev/null || true
 cp *.tar.* "$OUTPUT_DIR/" 2>/dev/null || true
+
+write_md5sums_manifest
 
 echo "=== Build Complete ==="
 ls -lh "$OUTPUT_DIR"/*.deb 2>/dev/null || echo "No .deb files found"

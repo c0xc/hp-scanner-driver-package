@@ -195,14 +195,15 @@ jobs:
           mkdir -p release-packages
           # Release assets:
           # - Include installable binaries (*.deb/*.rpm) for end users.
+          # - Include md5sums manifest for end users (covers upstream tarball + built packages).
           # - Include source and integrity artifacts (*.dsc, *.tar.*, *.src.rpm, *.asc, checksums) for admins/maintainers/compliance.
           # - Exclude logs.
           find artifacts/ -type f \
-            \( -name "*.deb" -o -name "*.rpm" \) \
+            \( -name "*.deb" -o -name "*.rpm" -o -name "md5sums-*.md5" \) \
             -print0 | xargs -0 -I {} cp {} release-packages/
 
           find artifacts/ -type f \
-            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" -o -name "*.asc" -o -name "*.sha256" -o -name "*.md5" -o -name "upstream-provenance-*.txt" \) \
+            \( -name "*.dsc" -o -name "*.src.rpm" -o -name "*.tar.*" -o -name "*.asc" -o -name "*.sha256" -o \( -name "*.md5" -a ! -name "md5sums-*.md5" \) -o -name "upstream-provenance-*.txt" \) \
             -print0 | while IFS= read -r -d '' f; do
               base="$(basename "$f")"
               cp "$f" "release-packages/ADMIN-${base}"
