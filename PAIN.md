@@ -1,7 +1,118 @@
 # PAIN.md - Things That Hurt (Or Will Hurt You)
 
-**Last Updated:** 2026-03-07  
+**Last Updated:** 2026-03-09  
 **Project:** hp-scanner-driver
+
+---
+
+## Remaining Lintian Findings We Are Accepting For Now
+
+Latest verified state: the Ubuntu 22.04 container build completes, the `.deb` is produced, and the in-container install self-test succeeds. The items below are the remaining lintian findings we are not treating as release blockers.
+
+### 1. `source-is-missing` on upstream binary blobs
+
+**Examples:**
+- `locatedriver`
+- `prnt/hpcups/libImageProcessor-*.so`
+- `prnt/plugins/{hbpl1,lj}-*.so`
+
+**Why we are not fixing it now:**
+These files come from upstream HPLIP as prebuilt binary artifacts with no corresponding preferred source in the tarball. Removing them would reduce device support. Replacing or reverse-engineering them is outside the scope of a packaging repo. HPLIP, in its usual spirit of generosity, ships opaque blobs and lets downstream explain themselves to policy tools.
+
+**Decision:**
+Document and accept for now. Revisit only if we decide to ship a reduced-feature package that deliberately drops proprietary or binary-only components.
+
+### 2. `broken-gz` and `file-name-contains-wildcard-character` for `usr/share/ppd/HP/*.ppd.gz`
+
+**Why we are not fixing it now:**
+This is packaging ugliness, but not a tested functional failure for the current scanner-driver use case. It appears to come from upstream install logic around PPD handling. Cleaning it up is possible, but it is lower priority than keeping the package buildable and installable.
+
+**Decision:**
+Accept for now. Fix later if we start caring about a cleaner printer-facing package or if users report an actual PPD install problem.
+
+### 3. `hp-scanner-driver-dbgsym` warnings on empty or odd debug files
+
+**Examples:**
+- `debug-file-with-no-debug-symbols`
+- `elf-error In program headers`
+- `package-relation-with-self`
+
+**Why we are not fixing it now:**
+These come from auto-generated debug packages around upstream binaries and plugins that were never packaged with much sympathy for normal distro tooling. End users do not need the debug package for normal operation, and the main package works.
+
+**Decision:**
+Accept for now. If we want a cleaner Debian story later, the practical fix is to disable or split debug output more deliberately, not to pretend those upstream blobs suddenly became friendly.
+
+### 4. Shared-library packaging warnings
+
+**Examples:**
+- `link-to-shared-library-in-wrong-package`
+- `package-name-doesnt-match-sonames`
+
+**Why we are not fixing it now:**
+The package is intentionally shipped as one installable unit. Splitting runtime libraries and development symlinks into separate Debian binary packages would be more policy-correct, but it would also reintroduce package-relationship complexity that we already learned to distrust.
+
+**Decision:**
+Accept for now. Only revisit if we decide to maintain a more Debian-native multi-package layout.
+
+### 5. Maintainer-script warnings
+
+**Examples:**
+- `maintainer-script-calls-systemctl`
+- `maintainer-script-lacks-debhelper-token`
+- `maintscript-calls-ldconfig`
+
+**Why we are not fixing it now:**
+The current scripts do explicit service refresh and SANE integration work that has been tested in the container install step. Converting them to a more debhelper-driven style is possible, but this is polish, not a correctness blocker.
+
+**Decision:**
+Accept for now. Keep the scripts readable and explicit until there is a concrete reason to refactor them.
+
+### 6. Missing man pages for many `hp-*` commands
+
+**Why we are not fixing it now:**
+Upstream ships a large pile of small utilities, GUI launchers, and historical command wrappers without proper manual pages. Writing and maintaining dozens of man pages here would be documentation work, not packaging repair.
+
+**Decision:**
+Accept for now. If this package ever gets formal distro-quality polish, manpage generation or selective command pruning would be the right follow-up.
+
+### 7. Legacy HAL files under `/usr/share/hal`
+
+**Why we are not fixing it now:**
+These files are obsolete on modern systems, but currently harmless. Removing them may be safe, but it is not buying us anything for the tested install path.
+
+**Decision:**
+Accept for now. Remove later if we decide to aggressively strip dead upstream legacy material.
+
+### 8. `package-depends-on-hardcoded-libc`
+
+**Why we are not fixing it now:**
+The package currently keeps an explicit `libc6` dependency in addition to generated shlibs dependencies. That is not elegant, but it is also not dangerous, and the package installs successfully in the tested container.
+
+**Decision:**
+Accept for now. If we tighten Debian metadata later, remove the explicit libc dependency and verify nothing regresses.
+
+### 9. `script-not-executable` and `unusual-interpreter xdg-open`
+
+**Examples:**
+- `usr/share/applications/hp-uiscan.desktop`
+- `usr/share/hplip/hplip_clean.sh`
+
+**Why we are not fixing it now:**
+This is mostly upstream file oddness rather than a core packaging failure. The desktop entry warning is lintian being unimpressed by the way upstream wired launcher behavior. Fair enough.
+
+**Decision:**
+Accept for now. Revisit only if desktop launch behavior is actually broken for users.
+
+### Bottom line
+
+The remaining findings are either:
+
+1. consequences of upstream shipping binary-only or legacy material,
+2. Debian-policy cleanup that would require a more complex package split, or
+3. documentation polish with little payoff compared to functional fixes.
+
+That is why they are documented here instead of being treated as immediate work items.
 
 ---
 

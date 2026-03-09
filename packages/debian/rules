@@ -53,6 +53,29 @@ override_dh_auto_install:
 	# Remove dll.conf and dll.d - we manage them in postinst/prerm
 	rm -f $(CURDIR)/debian/hp-scanner-driver/etc/sane.d/dll.conf
 	rm -rf $(CURDIR)/debian/hp-scanner-driver/etc/sane.d/dll.d
+	# Move udev rules out of /etc to the package-managed location.
+	if [ -f $(CURDIR)/debian/hp-scanner-driver/etc/udev/rules.d/56-hpmud.rules ]; then \
+		mkdir -p $(CURDIR)/debian/hp-scanner-driver/lib/udev/rules.d; \
+		mv $(CURDIR)/debian/hp-scanner-driver/etc/udev/rules.d/56-hpmud.rules \
+			$(CURDIR)/debian/hp-scanner-driver/lib/udev/rules.d/56-hpmud.rules; \
+		rmdir --ignore-fail-on-non-empty $(CURDIR)/debian/hp-scanner-driver/etc/udev/rules.d || true; \
+		rmdir --ignore-fail-on-non-empty $(CURDIR)/debian/hp-scanner-driver/etc/udev || true; \
+	fi
+	# Move ELF helpers out of /usr/share while keeping compatibility symlinks.
+	if [ -f $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/dat2drv ]; then \
+		mkdir -p $(CURDIR)/debian/hp-scanner-driver/usr/lib/hplip; \
+		mv $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/dat2drv \
+			$(CURDIR)/debian/hp-scanner-driver/usr/lib/hplip/dat2drv; \
+		ln -s ../../lib/hplip/dat2drv $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/dat2drv; \
+	fi
+	if [ -f $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/locatedriver ]; then \
+		mkdir -p $(CURDIR)/debian/hp-scanner-driver/usr/lib/hplip; \
+		mv $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/locatedriver \
+			$(CURDIR)/debian/hp-scanner-driver/usr/lib/hplip/locatedriver; \
+		ln -s ../../lib/hplip/locatedriver $(CURDIR)/debian/hp-scanner-driver/usr/share/hplip/locatedriver; \
+	fi
+	# Remove libtool archives; they are not needed at runtime and trigger lintian errors.
+	find $(CURDIR)/debian/hp-scanner-driver -name "*.la" -delete
 	# Normalize Python shebangs before dh_python3 scans dependencies.
 	find $(CURDIR)/debian/hp-scanner-driver -type f \( -name "*.py" -o -path "$(CURDIR)/debian/hp-scanner-driver/usr/lib/cups/filter/pstotiff" \) \
 		-exec sed -i 's|^#!/usr/bin/env python$$|#!/usr/bin/python3|; s|^#!/usr/bin/python$$|#!/usr/bin/python3|; s|^#!/usr/bin/python2$$|#!/usr/bin/python3|' {} \;

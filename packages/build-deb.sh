@@ -118,6 +118,60 @@ find . -type f -name "*.py[co]" -delete
 echo "Setting up debian/ packaging..."
 cp -r "$SCRIPT_DIR/debian" ./
 
+# Mirror the upstream patch series into debian/patches so 3.0 (quilt)
+# source packages accurately describe the modified upstream tree.
+mkdir -p debian/patches
+: > debian/patches/series
+while IFS= read -r patch_name; do
+    case "$patch_name" in
+        ""|\#*)
+            continue
+            ;;
+    esac
+
+    cp "$SCRIPT_DIR/patches/$patch_name" "debian/patches/$patch_name"
+    printf '%s\n' "$patch_name" >> debian/patches/series
+done < "$SCRIPT_DIR/patches/series"
+
+python3 - <<'PY'
+from pathlib import Path
+
+fixed_block = '''def checkPyQtImport4():
+    try:
+        import PyQt5
+        import ui5
+        return True
+    except ImportError as e:
+        log.debug(e)
+        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
+        return False
+'''
+broken_block = '''def checkPyQtImport4():
+        import ui5
+    else:
+        log.debug("HPLIP is not installed properly or is installed without graphical support. Please reinstall HPLIP again")
+'''
+
+path = Path("base/utils.py")
+fixed_text = path.read_text()
+if fixed_block not in fixed_text:
+    raise SystemExit("Failed to locate repaired checkPyQtImport4() block")
+
+broken_text = fixed_text.replace(fixed_block, broken_block, 1)
+Path(".debian-patch-old").write_text(broken_text)
+Path(".debian-patch-new").write_text(fixed_text)
+PY
+cat > debian/patches/03-fix-checkpyqtimport4.patch <<'EOF'
+Description: fix broken Qt5 import helper after Qt migration patch
+Author: c0xc <c0xc@example.com>
+Forwarded: not-needed
+Last-Update: 2026-03-09
+
+EOF
+diff -u --label a/base/utils.py --label b/base/utils.py .debian-patch-old .debian-patch-new >> debian/patches/03-fix-checkpyqtimport4.patch || true
+rm -f .debian-patch-old .debian-patch-new
+printf '%s\n' 03-fix-checkpyqtimport4.patch >> debian/patches/series
+
 # Update debian/changelog with distro-specific version
 # Format: hp-scanner-driver (3.25.8-0ubuntu1) jammy; urgency=medium
 echo "Updating debian/changelog for $DISTRO..."
